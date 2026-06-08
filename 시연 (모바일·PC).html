@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>현장출근기록 — 모바일·PC 비교</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="styles.css">
+<style>
+  body { background: var(--slate-100); min-height: 100vh; word-break: keep-all; }
+  .wrap { max-width: 1340px; margin: 0 auto; padding: 30px 28px 70px; }
+  .head { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 18px; margin-bottom: 24px; }
+  .head h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+  .head p { margin: 6px 0 0; font-size: 14.5px; color: var(--slate-500); }
+  .switch { display: flex; gap: 6px; background: #fff; border: 1px solid var(--slate-200); border-radius: var(--r-full); padding: 5px; box-shadow: var(--sh-sm); }
+  .switch button { border: 0; background: none; padding: 9px 16px; border-radius: var(--r-full); font-size: 14px; font-weight: 700; color: var(--slate-500); cursor: pointer; font-family: var(--font); transition: all .15s; }
+  .switch button.on { background: var(--blue-600); color: #fff; box-shadow: var(--sh-blue); }
+
+  .stage { display: flex; gap: 32px; align-items: flex-start; }
+  .col-label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; letter-spacing: .03em; color: var(--slate-500); margin-bottom: 14px; text-transform: uppercase; }
+  .col-label .pill { font-size: 11px; font-weight: 700; color: var(--blue-700); background: var(--blue-50); border: 1px solid var(--blue-100); padding: 3px 8px; border-radius: 99px; text-transform: none; letter-spacing: 0; }
+
+  /* phone */
+  .phone-col { flex: none; }
+  .phone { width: 384px; height: 812px; background: #0F172A; border-radius: 52px; padding: 13px; box-shadow: var(--sh-lg), 0 0 0 2px #1E293B inset; position: relative; }
+  .phone::after { content: ""; position: absolute; top: 22px; left: 50%; transform: translateX(-50%); width: 120px; height: 30px; background: #0F172A; border-radius: 99px; z-index: 3; }
+  .phone .screen { width: 100%; height: 100%; border-radius: 40px; overflow: hidden; background: #fff; position: relative; }
+  .phone iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+  /* browser */
+  .browser-col { flex: 1; min-width: 0; }
+  .browser { background: #fff; border: 1px solid var(--slate-200); border-radius: 16px; overflow: hidden; box-shadow: var(--sh-lg); height: 812px; display: flex; flex-direction: column; }
+  .bbar { display: flex; align-items: center; gap: 14px; padding: 13px 16px; background: var(--slate-50); border-bottom: 1px solid var(--slate-200); flex: none; }
+  .dots { display: flex; gap: 7px; }
+  .dots span { width: 12px; height: 12px; border-radius: 50%; }
+  .url { flex: 1; background: #fff; border: 1px solid var(--slate-200); border-radius: 8px; padding: 7px 13px; font-size: 13px; color: var(--slate-500); display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
+  .browser iframe { flex: 1; width: 100%; border: 0; display: block; }
+
+  .note { margin-top: 26px; background: #fff; border: 1px solid var(--slate-200); border-radius: var(--r-lg); padding: 18px 22px; font-size: 14px; color: var(--slate-600); line-height: 1.7; box-shadow: var(--sh-sm); }
+  .note b { color: var(--ink); }
+  .note a { color: var(--blue-600); text-decoration: none; font-weight: 700; }
+
+  @media (max-width: 1180px) {
+    .stage { flex-direction: column; align-items: center; }
+    .browser-col { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div>
+      <h1>현장출근기록 — 모바일 · PC</h1>
+      <p>같은 앱, 같은 데이터. 현장(휴대폰)은 BottomNav, 사무실(PC)은 사이드바로 동일하게.</p>
+    </div>
+    <div class="switch" id="switch">
+      <button data-h="dashboard" class="on">대시보드</button>
+      <button data-h="site">출근 입력</button>
+      <button data-h="calendar">통합 달력</button>
+      <button data-h="payroll">노무비</button>
+      <button data-h="stats">통계</button>
+      <button data-h="login">로그인</button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="phone-col">
+      <div class="col-label">📱 모바일 <span class="pill">현장 입력용</span></div>
+      <div class="phone"><div class="screen"><iframe id="mobile" src="현장출근기록.html#dashboard" title="모바일"></iframe></div></div>
+    </div>
+    <div class="browser-col">
+      <div class="col-label">🖥 PC · 반응형 <span class="pill">사무실 조회·집계용</span></div>
+      <div class="browser">
+        <div class="bbar">
+          <div class="dots"><span style="background:#FF5F57"></span><span style="background:#FEBC2E"></span><span style="background:#28C840"></span></div>
+          <div class="url" id="url">🔒 hyunjang.app/dashboard</div>
+        </div>
+        <iframe id="desktop" src="현장출근기록.html#dashboard" title="PC"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    💡 위 두 화면은 <b>실제 동작하는 같은 프로토타입</b>입니다. 상단 버튼으로 화면을 바꿔 모바일·PC를 나란히 비교하세요.
+    출근 입력 방식(스테퍼 / 숫자패드 / 리스트)은 <b>Tweaks 패널</b>에서 전환할 수 있습니다 —
+    전체 화면으로 보려면 <a href="현장출근기록.html" target="_blank">프로토타입 단독 열기 ↗</a>
+  </div>
+</div>
+
+<script>
+  const sw = document.getElementById('switch');
+  const m = document.getElementById('mobile');
+  const d = document.getElementById('desktop');
+  const url = document.getElementById('url');
+  const urls = { dashboard: 'dashboard', site: 'sites/강남-OO병원', calendar: 'calendar', payroll: 'payroll', stats: 'stats', login: 'login' };
+  sw.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    [...sw.children].forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    const h = b.dataset.h;
+    m.src = '현장출근기록.html#' + h;
+    d.src = '현장출근기록.html#' + h;
+    url.textContent = '🔒 hyunjang.app/' + urls[h];
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+/* ============================================================
+   현장출근기록 — Design System
+   미니멀 / 모던 / 선명한 블루 · 모바일 우선
+   ============================================================ */
+
+/* Pretendard is loaded via <link> in the HTML <head> for early/parallel fetch */
+
+:root {
+  /* ---- Brand blue ---- */
+  --blue-700: #1D4ED8;
+  --blue-600: #2563EB;   /* primary */
+  --blue-500: #3B82F6;
+  --blue-300: #93C5FD;
+  --blue-100: #DBEAFE;
+  --blue-50:  #EFF6FF;
+
+  /* ---- Ink / neutrals (slate) ---- */
+  --ink:      #0F172A;
+  --slate-700:#334155;
+  --slate-600:#475569;
+  --slate-500:#64748B;
+  --slate-400:#94A3B8;
+  --slate-300:#CBD5E1;
+  --slate-200:#E2E8F0;
+  --slate-100:#F1F5F9;
+  --slate-50: #F8FAFC;
+  --white:    #FFFFFF;
+
+  /* ---- Status ---- */
+  --green-600:#059669;
+  --green-500:#10B981;
+  --green-50: #ECFDF5;
+  --amber-500:#F59E0B;
+  --amber-50: #FFFBEB;
+  --red-500:  #EF4444;
+  --red-50:   #FEF2F2;
+
+  /* ---- Trade accent palette (공종별 컬러) ---- */
+  --t-light:  #2563EB; /* 경량 */
+  --t-plumb:  #0EA5E9; /* 설비 */
+  --t-aircon: #06B6D4; /* 에어컨 */
+  --t-elec:   #F59E0B; /* 전기 */
+  --t-wood:   #8B5CF6; /* 목공 */
+  --t-paint:  #EC4899; /* 도장 */
+  --t-tile:   #14B8A6; /* 타일 */
+  --t-etc:    #64748B; /* 기타 */
+
+  /* ---- Radii ---- */
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r:    14px;
+  --r-lg: 18px;
+  --r-xl: 24px;
+  --r-full: 999px;
+
+  /* ---- Shadows ---- */
+  --sh-sm: 0 1px 2px rgba(15,23,42,.06), 0 1px 3px rgba(15,23,42,.04);
+  --sh:    0 2px 8px rgba(15,23,42,.06), 0 1px 2px rgba(15,23,42,.04);
+  --sh-md: 0 6px 20px rgba(15,23,42,.08), 0 2px 6px rgba(15,23,42,.04);
+  --sh-lg: 0 16px 40px rgba(15,23,42,.12), 0 4px 12px rgba(15,23,42,.06);
+  --sh-blue: 0 8px 24px rgba(37,99,235,.28);
+
+  /* ---- Type ---- */
+  --font: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+
+/* numeric tabular figures for tables/stats */
+.tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+button { font-family: var(--font); cursor: pointer; }
+input, select, textarea { font-family: var(--font); }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes popIn { from { transform: scale(.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--slate-300); border-radius: 999px; border: 3px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: var(--slate-400); background-clip: content-box; }
