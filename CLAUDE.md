@@ -9,6 +9,7 @@
 - **Zustand** 전역 상태 (`stores/app-store.ts`) — 현재 mock 데이터, 추후 Supabase로 교체
 - **Supabase** (예정) — Postgres + Auth(이메일/카카오) + RLS
 - **lucide-react** 아이콘, **date-fns** 날짜, **Pretendard** 폰트
+- Package manager: **npm**
 
 ## 구조
 
@@ -63,4 +64,69 @@ SUPABASE_SCHEMA.md      DB 스키마 + RLS + 카카오 OAuth 설정 가이드
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 ```
-스키마 전체는 `SUPABASE_SCHEMA.md` 참고. 연동 시 `stores/app-store.ts`의 mock 데이터를 Supabase 쿼리로 교체.
+- `service_role` 키는 서버에서만 사용한다. 클라이언트 컴포넌트에 노출하지 않는다.
+- RLS 상태와 정책을 의식하고 작업한다.
+- 스키마 전체는 `SUPABASE_SCHEMA.md` 참고.
+- 연동 시 `stores/app-store.ts`의 mock 데이터를 Supabase 쿼리로 교체.
+
+---
+
+## 작업 전 기본 태도
+
+작업을 시작하면 먼저 현재 코드를 읽고 판단한다. 과거 지식이나 추측으로 바로 수정하지 않는다.
+
+- 기존 패턴을 먼저 따른다.
+- 관련 없는 리팩터링은 하지 않는다.
+- 사용자가 만든 변경사항을 되돌리지 않는다.
+- 큰 기능은 설계와 영향 범위를 먼저 설명하고 진행한다.
+- 작은 스타일/문구 수정은 과하게 검사하지 않아도 된다.
+
+## 코딩 원칙
+
+### Think Before Coding
+구현 전에 가정을 명시한다. 해석이 여러 가지면 제시하고 고른다. 불확실하면 멈추고 묻는다.
+
+### Simplicity First
+요청한 것만 만든다.
+- 요청 범위를 넘는 기능 추가 금지
+- 단일 사용 코드에 추상화 금지
+- 요청하지 않은 "유연성"이나 "설정 가능성" 금지
+- 200줄로 짰는데 50줄에 가능하면 다시 쓴다
+
+### Surgical Changes
+건드려야 할 것만 건드린다.
+- 인접한 코드, 주석, 포매팅을 "개선"하지 않는다
+- 내가 만든 변경으로 생긴 고아(미사용 import/변수)는 내가 제거한다
+- 기존 dead code는 언급만 하고 삭제하지 않는다
+
+## 커밋 규칙
+
+Conventional Commit 형식, 타입은 영어, 설명은 한국어.
+
+```
+feat: 현장 상세 달력 탭 구현
+fix: DateStrip 선택일 스크롤 버그 수정
+style: 대시보드 카드 간격 조정
+refactor: tradeManDays 유틸 함수 분리
+```
+
+커밋 전 확인:
+- 스타일만 바꾼 경우: diff 확인 후 커밋
+- 기능/서버 액션 변경: `npx tsc --noEmit`
+- 큰 기능 변경: `npm run lint`, 가능하면 `npm run build`
+
+## 검증 습관
+
+작업 후 "됐다"고 말하기 전에 실제 확인 결과를 말한다.
+
+- `npx tsc --noEmit`
+- `npm run lint`
+- `npm run build`
+
+## 답변 스타일
+
+- 한국어로 간결하게 말한다.
+- 무엇을 바꿨는지, 무엇을 확인했는지 알려준다.
+- 불확실한 것은 불확실하다고 말하고 확인한다.
+- 사용자가 질문한 것보다 더 큰 위험이 보이면 짧게 짚어준다.
+- 장황한 설명보다 현재 작업에 필요한 핵심을 우선한다.
