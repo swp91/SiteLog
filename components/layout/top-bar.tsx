@@ -28,7 +28,7 @@ export function TopBar({ title, back, className }: TopBarProps) {
           <ChevronLeft size={22} />
         </button>
       ) : (
-        <img src="/logo.svg" alt="SiteLog Logo" className="w-8 h-8 object-contain" />
+        <img src="/Sitelog-logo.svg" alt="SiteLog Logo" className="w-8 h-8 object-contain" />
       )}
       <h1 className="flex-1 text-center text-base font-bold text-ink px-2 truncate">
         {title ?? '현장출근기록'}

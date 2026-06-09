@@ -1,0 +1,25 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">현장로그 로고</title>
+  <desc id="desc">문서와 체크 배지를 조합한 블루톤 웹서비스 로고</desc>
+  <defs>
+    <linearGradient id="hjlogBlue" x1="104" y1="88" x2="416" y2="424" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#60A5FA"/>
+      <stop offset="0.5" stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <filter id="softShadow" x="70" y="68" width="380" height="390" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="#1D4ED8" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+  <g filter="url(#softShadow)">
+    <path d="M180 92H324C360.451 92 390 121.549 390 158V298" stroke="url(#hjlogBlue)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M132 176V354C132 390.451 161.549 420 198 420H302" stroke="url(#hjlogBlue)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M180 92C153.49 92 132 113.49 132 140V176" stroke="url(#hjlogBlue)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="184" y="164" width="148" height="176" rx="26" stroke="url(#hjlogBlue)" stroke-width="22"/>
+    <path d="M218 218H292" stroke="url(#hjlogBlue)" stroke-width="18" stroke-linecap="round"/>
+    <path d="M218 264H284" stroke="url(#hjlogBlue)" stroke-width="18" stroke-linecap="round"/>
+    <path d="M218 310H258" stroke="url(#hjlogBlue)" stroke-width="18" stroke-linecap="round"/>
+    <circle cx="346" cy="340" r="70" fill="url(#hjlogBlue)"/>
+    <path d="M313 339L337 363L382 315" stroke="white" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

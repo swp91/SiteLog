@@ -75,7 +75,7 @@ export default function LoginPage() {
       <div className="w-full max-w-[380px]">
         {/* Brand */}
         <div className="flex flex-col items-center gap-3 mb-8">
-          <img src="/logo.svg" alt="SiteLog Logo" className="w-16 h-16 object-contain" />
+          <img src="/Sitelog-logo.svg" alt="SiteLog Logo" className="w-16 h-16 object-contain" />
           <h1 className="text-[1.375rem] font-bold text-ink">출근로그</h1>
           <p className="text-sm text-slate-400">현장 출근 관리</p>
         </div>
