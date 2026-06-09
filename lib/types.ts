@@ -40,6 +40,8 @@ export interface Journal {
 export type Journals = Record<string, Journal>
 
 export interface AppUser {
+  id: string
+  org_id: string
   name: string
   role: string
   email: string
