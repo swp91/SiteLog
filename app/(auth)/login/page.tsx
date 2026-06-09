@@ -1,28 +1,69 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Building2, Mail, Lock, User } from 'lucide-react'
 import { Button, Card, TextInput, Field, Segmented } from '@/components/ui'
 import { useAppStore } from '@/stores/app-store'
+import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
   const router = useRouter()
-  const login = useAppStore((s) => s.login)
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
 
-  function handleSubmit(e: React.FormEvent) {
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        router.push('/dashboard')
+      }
+    })
+  }, [router])
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    login()
-    router.push('/dashboard')
+    if (mode === 'login') {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) {
+        alert(error.message)
+      } else {
+        router.push('/dashboard')
+      }
+    } else {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name || '신규 사용자',
+          },
+        },
+      })
+      if (error) {
+        alert(error.message)
+      } else {
+        if (data.session) {
+          router.push('/dashboard')
+        } else {
+          alert('회원가입이 완료되었습니다! 이메일 인증을 확인해 주세요.')
+          setMode('login')
+        }
+      }
+    }
   }
 
-  function handleKakao() {
-    login()
-    router.push('/dashboard')
+  async function handleKakao() {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'kakao',
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+      },
+    })
+    if (error) {
+      alert(error.message)
+    }
   }
 
   return (
