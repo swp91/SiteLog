@@ -55,7 +55,7 @@ export default function StatsPage() {
         >
           <ChevronLeft size={18} />
         </button>
-        <h1 className="text-[20px] font-bold text-ink">
+        <h1 className="text-xl font-bold text-ink">
           {month.getFullYear()}년 {month.getMonth() + 1}월
         </h1>
         <button
@@ -83,26 +83,26 @@ export default function StatsPage() {
       {/* KPI */}
       <div className="grid grid-cols-2 wide:grid-cols-4 gap-3 mb-6">
         <Card className="gradient-blue text-white !border-0">
-          <p className="text-[12px] text-blue-100 mb-1">총 man-day</p>
-          <p className="text-[28px] font-extrabold tabular-nums">{totalManDay}</p>
+          <p className="text-xs text-blue-100 mb-1">총 man-day</p>
+          <p className="text-[1.75rem] font-extrabold tabular-nums">{totalManDay}</p>
         </Card>
         <Card>
-          <p className="text-[12px] text-slate-400 mb-1">작업일수</p>
-          <p className="text-[28px] font-extrabold tabular-nums text-ink">{activeDays}<span className="text-[14px] font-normal text-slate-400 ml-1">일</span></p>
+          <p className="text-xs text-slate-400 mb-1">작업일수</p>
+          <p className="text-[1.75rem] font-extrabold tabular-nums text-ink">{activeDays}<span className="text-sm font-normal text-slate-400 ml-1">일</span></p>
         </Card>
         <Card>
-          <p className="text-[12px] text-slate-400 mb-1">일 평균</p>
-          <p className="text-[28px] font-extrabold tabular-nums text-ink">{dailyAvg}<span className="text-[14px] font-normal text-slate-400 ml-1">명</span></p>
+          <p className="text-xs text-slate-400 mb-1">일 평균</p>
+          <p className="text-[1.75rem] font-extrabold tabular-nums text-ink">{dailyAvg}<span className="text-sm font-normal text-slate-400 ml-1">명</span></p>
         </Card>
         <Card>
-          <p className="text-[12px] text-slate-400 mb-1">활성 공종</p>
-          <p className="text-[28px] font-extrabold tabular-nums text-ink">{activeTradeCount}<span className="text-[14px] font-normal text-slate-400 ml-1">개</span></p>
+          <p className="text-xs text-slate-400 mb-1">활성 공종</p>
+          <p className="text-[1.75rem] font-extrabold tabular-nums text-ink">{activeTradeCount}<span className="text-sm font-normal text-slate-400 ml-1">개</span></p>
         </Card>
       </div>
 
       {/* Daily bar chart */}
       <Card className="mb-5">
-        <p className="text-[14px] font-semibold text-ink mb-4">일별 출근 추이</p>
+        <p className="text-sm font-semibold text-ink mb-4">일별 출근 추이</p>
         <div className="overflow-x-auto scrollbar-none">
           <div className="flex items-end gap-0.5 h-28 min-w-max px-1">
             {dailyTotals.map(({ date, total }) => (
@@ -113,7 +113,7 @@ export default function StatsPage() {
                     style={{ height: `${Math.max((total / maxDay) * 100, total > 0 ? 4 : 0)}%` }}
                   />
                 </div>
-                <span className="text-[9px] text-slate-400 tabular-nums">{date.getDate()}</span>
+                <span className="text-[0.5625rem] text-slate-400 tabular-nums">{date.getDate()}</span>
               </div>
             ))}
           </div>
@@ -123,7 +123,7 @@ export default function StatsPage() {
       {/* Trade breakdown */}
       <div className="wide:grid wide:grid-cols-2 wide:gap-5">
         <Card>
-          <p className="text-[14px] font-semibold text-ink mb-4">공종별 집계</p>
+          <p className="text-sm font-semibold text-ink mb-4">공종별 집계</p>
           <div className="flex flex-col gap-3">
             {trades
               .filter((t) => (manDays[t.id] ?? 0) > 0)
@@ -135,8 +135,8 @@ export default function StatsPage() {
                   <div key={trade.id}>
                     <div className="flex items-center gap-2 mb-1">
                       <TradeDot color={trade.color} size="sm" />
-                      <span className="text-[13px] font-medium text-ink flex-1">{trade.name}</span>
-                      <span className="text-[13px] font-bold tabular-nums">{count}일</span>
+                      <span className="text-[0.8125rem] font-medium text-ink flex-1">{trade.name}</span>
+                      <span className="text-[0.8125rem] font-bold tabular-nums">{count}일</span>
                     </div>
                     <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                       <div

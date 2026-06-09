@@ -13,9 +13,9 @@ interface StepperProps {
 }
 
 const sizeCls = {
-  sm: { btn: 'w-7 h-7', text: 'w-8 text-[14px]', icon: 14 },
-  md: { btn: 'w-9 h-9', text: 'w-10 text-[16px]', icon: 16 },
-  lg: { btn: 'w-11 h-11', text: 'w-12 text-[20px]', icon: 18 },
+  sm: { btn: 'w-7 h-7', text: 'w-8 text-sm', icon: 14 },
+  md: { btn: 'w-9 h-9', text: 'w-10 text-base', icon: 16 },
+  lg: { btn: 'w-11 h-11', text: 'w-12 text-xl', icon: 18 },
 }
 
 export function Stepper({ value, onChange, min = 0, max = 99, size = 'md', className }: StepperProps) {

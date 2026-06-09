@@ -32,7 +32,7 @@ export function TopBar({ title, back, className }: TopBarProps) {
           <Building2 size={15} className="text-white" />
         </div>
       )}
-      <h1 className="flex-1 text-center text-[16px] font-bold text-ink px-2 truncate">
+      <h1 className="flex-1 text-center text-base font-bold text-ink px-2 truncate">
         {title ?? '현장출근기록'}
       </h1>
       <div className="w-9" /> {/* spacer */}

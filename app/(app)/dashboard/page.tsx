@@ -40,21 +40,21 @@ export default function DashboardPage() {
 
       {/* Greeting */}
       <div className="pt-6 pb-4">
-        <p className="text-[14px] text-slate-500">{greeting},</p>
-        <h1 className="text-[24px] font-bold text-ink">{user.name} 님</h1>
+        <p className="text-sm text-slate-500">{greeting},</p>
+        <h1 className="text-2xl font-bold text-ink">{user.name} 님</h1>
       </div>
 
       {/* Hero grid */}
       <div className="grid wide:grid-cols-2 gap-4 mb-6">
         {/* Today total */}
         <div className="gradient-blue rounded-xl p-5 text-white shadow-blue">
-          <p className="text-[13px] font-medium text-blue-100 mb-1">오늘 전체 출근</p>
+          <p className="text-[0.8125rem] font-medium text-blue-100 mb-1">오늘 전체 출근</p>
           <div className="flex items-end gap-3 mb-3">
-            <span className="text-[46px] font-extrabold leading-none tabular-nums">{todayTotal}</span>
-            <span className="text-[16px] font-medium text-blue-200 mb-1.5">명</span>
+            <span className="text-[2.875rem] font-extrabold leading-none tabular-nums">{todayTotal}</span>
+            <span className="text-base font-medium text-blue-200 mb-1.5">명</span>
           </div>
           <div className="flex items-center gap-2 pt-3 border-t border-white/20">
-            <Badge tone="blue" className="bg-white/20 text-white text-[11px]">
+            <Badge tone="blue" className="bg-white/20 text-white text-[0.6875rem]">
               진행 {activeSites.length}개 현장
             </Badge>
           </div>
@@ -62,7 +62,7 @@ export default function DashboardPage() {
 
         {/* 7-day chart */}
         <Card padding={false} className="p-5">
-          <p className="text-[13px] font-semibold text-slate-500 mb-3">최근 7일 출근 추이</p>
+          <p className="text-[0.8125rem] font-semibold text-slate-500 mb-3">최근 7일 출근 추이</p>
           <div className="flex items-end gap-1 h-24">
             {last7.map(({ date, total }, i) => {
               const isToday = i === 6
@@ -75,7 +75,7 @@ export default function DashboardPage() {
                       style={{ height: `${Math.max(heightPct, 4)}%` }}
                     />
                   </div>
-                  <span className={`text-[10px] tabular-nums ${isToday ? 'text-blue-600 font-bold' : 'text-slate-400'}`}>
+                  <span className={`text-[0.625rem] tabular-nums ${isToday ? 'text-blue-600 font-bold' : 'text-slate-400'}`}>
                     {fmtKShort(date)}
                   </span>
                 </div>
@@ -86,7 +86,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Site cards */}
-      <h2 className="text-[15px] font-bold text-ink mb-3">현장별 오늘 출근</h2>
+      <h2 className="text-[0.9375rem] font-bold text-ink mb-3">현장별 오늘 출근</h2>
       <div className="grid wide:grid-cols-2 gap-3">
         {activeSites.map((site) => {
           const total = dayTotal(records, site.id, todayStr)
@@ -100,16 +100,16 @@ export default function DashboardPage() {
               <Card hover className="flex flex-col gap-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-[15px] font-bold text-ink truncate">{site.name}</p>
-                    <p className="text-[12px] text-slate-400 truncate mt-0.5">{site.addr}</p>
+                    <p className="text-[0.9375rem] font-bold text-ink truncate">{site.name}</p>
+                    <p className="text-xs text-slate-400 truncate mt-0.5">{site.addr}</p>
                   </div>
                   <Badge tone={statusTone[site.status]}>{site.status}</Badge>
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-[13px] text-slate-500">오늘 출근</span>
+                  <span className="text-[0.8125rem] text-slate-500">오늘 출근</span>
                   {total > 0 ? (
-                    <span className="text-[20px] font-extrabold text-blue-600 tabular-nums">{total}명</span>
+                    <span className="text-xl font-extrabold text-blue-600 tabular-nums">{total}명</span>
                   ) : (
                     <Badge tone="amber">미입력</Badge>
                   )}
@@ -120,7 +120,7 @@ export default function DashboardPage() {
                     {tradesToday.map(({ trade, count }) => (
                       <span
                         key={trade!.id}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-[12px] text-slate-600"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-xs text-slate-600"
                       >
                         <TradeDot color={trade!.color} size="sm" />
                         {trade!.name} {count}

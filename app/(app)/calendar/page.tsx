@@ -76,7 +76,7 @@ export default function CalendarPage() {
             >
               <ChevronLeft size={18} />
             </button>
-            <h2 className="text-[16px] font-bold text-ink">
+            <h2 className="text-base font-bold text-ink">
               {viewMonth.getFullYear()}년 {viewMonth.getMonth() + 1}월
             </h2>
             <button
@@ -89,7 +89,7 @@ export default function CalendarPage() {
 
           <div className="grid grid-cols-7 mb-1">
             {['월', '화', '수', '목', '금', '토', '일'].map((d, i) => (
-              <div key={d} className={cn('text-center text-[11px] font-semibold py-1', i === 6 ? 'text-red-400' : i === 5 ? 'text-blue-400' : 'text-slate-400')}>
+              <div key={d} className={cn('text-center text-[0.6875rem] font-semibold py-1', i === 6 ? 'text-red-400' : i === 5 ? 'text-blue-400' : 'text-slate-400')}>
                 {d}
               </div>
             ))}
@@ -117,13 +117,13 @@ export default function CalendarPage() {
                   )}
                 >
                   <span className={cn(
-                    'text-[13px] font-bold',
+                    'text-[0.8125rem] font-bold',
                     isSelected ? 'text-white' : isToday ? 'text-blue-600' : 'text-ink',
                   )}>
                     {d.getDate()}
                   </span>
                   {total > 0 && (
-                    <span className={cn('text-[10px] tabular-nums', isSelected ? 'text-blue-100' : 'text-slate-500')}>
+                    <span className={cn('text-[0.625rem] tabular-nums', isSelected ? 'text-blue-100' : 'text-slate-500')}>
                       {total}명
                     </span>
                   )}
@@ -146,16 +146,16 @@ export default function CalendarPage() {
 
         {/* Detail */}
         <div className="wide:w-64 mt-6 wide:mt-0 bg-white rounded-lg border border-slate-200 p-4">
-          <p className="text-[13px] font-semibold text-slate-500 mb-3">{fmtKDate(selected)}</p>
+          <p className="text-[0.8125rem] font-semibold text-slate-500 mb-3">{fmtKDate(selected)}</p>
           {selectedDayTotals.filter((x) => x.total > 0).length === 0 ? (
-            <p className="text-[13px] text-slate-400">출근 기록이 없어요</p>
+            <p className="text-[0.8125rem] text-slate-400">출근 기록이 없어요</p>
           ) : (
             <div className="flex flex-col gap-3">
               {selectedDayTotals.filter((x) => x.total > 0).map(({ site, total, color }) => (
                 <div key={site.id} className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                  <span className="text-[13px] text-slate-700 flex-1 truncate">{site.name}</span>
-                  <span className="text-[13px] font-bold tabular-nums">{total}명</span>
+                  <span className="text-[0.8125rem] text-slate-700 flex-1 truncate">{site.name}</span>
+                  <span className="text-[0.8125rem] font-bold tabular-nums">{total}명</span>
                 </div>
               ))}
             </div>

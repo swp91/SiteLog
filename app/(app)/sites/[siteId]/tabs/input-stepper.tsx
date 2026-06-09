@@ -23,12 +23,12 @@ export function InputStepperTab({ site, trades, records, date, onSet }: Props) {
     <div className="max-w-[700px] mx-auto px-4 pb-8">
       {/* Summary bar */}
       <div className="sticky top-[calc(7.5rem)] z-10 -mx-4 px-4 py-2 bg-slate-50/90 backdrop-blur-sm border-b border-slate-100 mb-4 flex items-center gap-4">
-        <span className="text-[13px] text-slate-500">{fmtKDate(parseYmd(date))}</span>
-        <span className="text-[13px] text-slate-400">·</span>
-        <span className="text-[13px] font-semibold text-ink">{activeCount}개 공종</span>
-        <span className="text-[13px] text-slate-400">·</span>
-        <span className="text-[16px] font-extrabold text-blue-600 tabular-nums">{total}명</span>
-        <span className="ml-auto text-[11px] text-slate-400">자동 저장됩니다</span>
+        <span className="text-[0.8125rem] text-slate-500">{fmtKDate(parseYmd(date))}</span>
+        <span className="text-[0.8125rem] text-slate-400">·</span>
+        <span className="text-[0.8125rem] font-semibold text-ink">{activeCount}개 공종</span>
+        <span className="text-[0.8125rem] text-slate-400">·</span>
+        <span className="text-base font-extrabold text-blue-600 tabular-nums">{total}명</span>
+        <span className="ml-auto text-[0.6875rem] text-slate-400">자동 저장됩니다</span>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -63,9 +63,9 @@ function TradeCard({
       <div className="flex items-center gap-3">
         <TradeDot color={trade.color} />
         <div className="flex-1 min-w-0">
-          <p className="text-[14px] font-semibold text-ink">{trade.name}</p>
+          <p className="text-sm font-semibold text-ink">{trade.name}</p>
           {trade.company && (
-            <p className="text-[12px] text-slate-400 truncate">{trade.company}</p>
+            <p className="text-xs text-slate-400 truncate">{trade.company}</p>
           )}
         </div>
         <Stepper value={count} onChange={onCountChange} size="lg" />
@@ -75,7 +75,7 @@ function TradeCard({
         <div className="mt-3">
           <button
             onClick={() => setMemoOpen((v) => !v)}
-            className="flex items-center gap-1 text-[12px] text-slate-400 hover:text-slate-600 transition-colors"
+            className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 transition-colors"
           >
             {memoOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
             메모
@@ -83,7 +83,7 @@ function TradeCard({
           </button>
           {memoOpen && (
             <textarea
-              className="mt-2 w-full h-16 px-3 py-2 text-[13px] rounded-sm border border-slate-200 bg-slate-50 resize-none outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-colors"
+              className="mt-2 w-full h-16 px-3 py-2 text-[0.8125rem] rounded-sm border border-slate-200 bg-slate-50 resize-none outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-colors"
               placeholder="작업 내용 메모"
               value={memo}
               onChange={(e) => onMemoChange(e.target.value)}

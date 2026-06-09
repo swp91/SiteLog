@@ -62,7 +62,7 @@ export default function TradesPage() {
       <TopBar title="공종 · 업체" />
 
       <div className="flex items-center justify-between pt-6 pb-4">
-        <h1 className="text-[22px] font-bold text-ink">공종 · 업체</h1>
+        <h1 className="text-[1.375rem] font-bold text-ink">공종 · 업체</h1>
         <Button size="sm" icon={<Plus size={15} />} onClick={openNew} className="hidden wide:flex">
           공종 추가
         </Button>
@@ -75,7 +75,7 @@ export default function TradesPage() {
             <Card key={trade.id} className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 <TradeDot color={trade.color} />
-                <span className="text-[15px] font-bold text-ink flex-1">{trade.name}</span>
+                <span className="text-[0.9375rem] font-bold text-ink flex-1">{trade.name}</span>
                 <button
                   onClick={() => openEdit(trade)}
                   className="w-8 h-8 flex items-center justify-center rounded-sm text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
@@ -84,21 +84,21 @@ export default function TradesPage() {
                 </button>
               </div>
               {trade.company && (
-                <p className="text-[13px] font-medium text-slate-700">{trade.company}</p>
+                <p className="text-[0.8125rem] font-medium text-slate-700">{trade.company}</p>
               )}
               {trade.contact && (
-                <p className="text-[12px] text-slate-400">{trade.contact}</p>
+                <p className="text-xs text-slate-400">{trade.contact}</p>
               )}
               {trade.phone && (
                 <a
                   href={`tel:${trade.phone}`}
-                  className="flex items-center gap-1.5 text-[12px] text-slate-500 hover:text-blue-600 transition-colors"
+                  className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-blue-600 transition-colors"
                 >
                   <Phone size={11} />
                   {trade.phone}
                 </a>
               )}
-              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[12px] text-slate-400">
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-400">
                 <span>일당 {(trade.rate / 10000).toFixed(0)}만원</span>
                 <span>누적 {md}일</span>
               </div>

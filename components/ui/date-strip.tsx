@@ -57,13 +57,13 @@ export function DateStrip({ selected, onChange, past = 30, future = 7 }: DateStr
             )}
           >
             <span className={cn(
-              'text-[11px] font-medium',
+              'text-[0.6875rem] font-medium',
               isSelected ? 'text-blue-100' : isSun ? 'text-red-500' : isSat ? 'text-blue-400' : 'text-slate-400',
             )}>
               {WEEKDAYS[dow]}
             </span>
             <span className={cn(
-              'text-[15px] font-bold tabular-nums',
+              'text-[0.9375rem] font-bold tabular-nums',
               isSelected ? 'text-white' : 'text-ink',
             )}>
               {d.getDate()}

@@ -70,7 +70,7 @@ export default function SitesPage() {
 
       {/* Header */}
       <div className="flex items-center justify-between pt-6 pb-4">
-        <h1 className="text-[22px] font-bold text-ink">현장</h1>
+        <h1 className="text-[1.375rem] font-bold text-ink">현장</h1>
         <Button size="sm" icon={<Plus size={15} />} onClick={openNew} className="hidden wide:flex">
           현장 추가
         </Button>
@@ -94,9 +94,9 @@ export default function SitesPage() {
             <Card key={site.id} className="flex flex-col gap-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-[15px] font-bold text-ink truncate">{site.name}</p>
+                  <p className="text-[0.9375rem] font-bold text-ink truncate">{site.name}</p>
                   {site.addr && (
-                    <p className="flex items-center gap-1 text-[12px] text-slate-400 mt-0.5">
+                    <p className="flex items-center gap-1 text-xs text-slate-400 mt-0.5">
                       <MapPin size={11} />
                       {site.addr}
                     </p>
@@ -106,14 +106,14 @@ export default function SitesPage() {
               </div>
 
               {site.manager && (
-                <p className="flex items-center gap-1.5 text-[13px] text-slate-500">
+                <p className="flex items-center gap-1.5 text-[0.8125rem] text-slate-500">
                   <User size={13} className="text-slate-400" />
                   {site.manager}
                 </p>
               )}
 
               <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-                <span className="text-[13px] text-slate-400">오늘 {total}명</span>
+                <span className="text-[0.8125rem] text-slate-400">오늘 {total}명</span>
                 <div className="flex gap-2">
                   <Button
                     size="sm"
@@ -140,7 +140,7 @@ export default function SitesPage() {
 
       {filtered.length === 0 && (
         <div className="text-center py-16 text-slate-400">
-          <p className="text-[15px]">검색 결과가 없어요</p>
+          <p className="text-[0.9375rem]">검색 결과가 없어요</p>
         </div>
       )}
 

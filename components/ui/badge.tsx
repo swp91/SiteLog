@@ -29,7 +29,7 @@ export function Badge({ tone = 'slate', dot, className, children, ...props }: Ba
     <span
       {...props}
       className={cn(
-        'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[12px] font-semibold',
+        'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold',
         toneCls[tone],
         className,
       )}

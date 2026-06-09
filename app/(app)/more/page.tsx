@@ -23,8 +23,8 @@ export default function MorePage() {
                 <Icon size={20} className="text-blue-600" />
               </div>
               <div className="flex-1">
-                <p className="text-[15px] font-semibold text-ink">{label}</p>
-                <p className="text-[12px] text-slate-400">{desc}</p>
+                <p className="text-[0.9375rem] font-semibold text-ink">{label}</p>
+                <p className="text-xs text-slate-400">{desc}</p>
               </div>
               <ChevronRight size={16} className="text-slate-300" />
             </Card>

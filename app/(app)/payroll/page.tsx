@@ -44,7 +44,7 @@ export default function PayrollPage() {
         >
           <ChevronLeft size={18} />
         </button>
-        <h1 className="text-[20px] font-bold text-ink">
+        <h1 className="text-xl font-bold text-ink">
           {month.getFullYear()}년 {month.getMonth() + 1}월
         </h1>
         <button
@@ -71,23 +71,23 @@ export default function PayrollPage() {
 
       {/* Hero */}
       <div className="gradient-blue rounded-xl p-5 text-white shadow-blue mb-5">
-        <p className="text-[13px] text-blue-100 mb-1">총 노무비</p>
-        <p className="text-[36px] font-extrabold tabular-nums">
-          {wonShort(totalCost)}<span className="text-[16px] font-normal text-blue-200 ml-1">원</span>
+        <p className="text-[0.8125rem] text-blue-100 mb-1">총 노무비</p>
+        <p className="text-4xl font-extrabold tabular-nums">
+          {wonShort(totalCost)}<span className="text-base font-normal text-blue-200 ml-1">원</span>
         </p>
-        <p className="text-[13px] text-blue-200 mt-2">총 {totalManDay} man-day</p>
+        <p className="text-[0.8125rem] text-blue-200 mt-2">총 {totalManDay} man-day</p>
       </div>
 
       {/* Table */}
       <Card padding={false} className="mb-5">
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-          <p className="text-[14px] font-semibold text-ink">공종별 노무비</p>
+          <p className="text-sm font-semibold text-ink">공종별 노무비</p>
           <Button size="sm" variant="outline" icon={<Download size={13} />}>
             정산서
           </Button>
         </div>
         <div className="overflow-x-auto scrollbar-none">
-          <table className="w-full text-[13px]">
+          <table className="w-full text-[0.8125rem]">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
                 <th className="text-left px-4 py-2.5 font-semibold text-slate-500">공종 · 업체</th>
@@ -104,7 +104,7 @@ export default function PayrollPage() {
                       <TradeDot color={trade.color} size="sm" />
                       <div>
                         <p className="font-semibold text-ink">{trade.name}</p>
-                        {trade.company && <p className="text-[11px] text-slate-400">{trade.company}</p>}
+                        {trade.company && <p className="text-[0.6875rem] text-slate-400">{trade.company}</p>}
                       </div>
                     </div>
                   </td>
@@ -133,7 +133,7 @@ export default function PayrollPage() {
 
       {/* Bar chart */}
       <Card>
-        <p className="text-[14px] font-semibold text-ink mb-4">비중</p>
+        <p className="text-sm font-semibold text-ink mb-4">비중</p>
         <div className="flex flex-col gap-3">
           {rows.map(({ trade, cost }) => {
             const pct = totalCost > 0 ? (cost / totalCost) * 100 : 0
@@ -141,9 +141,9 @@ export default function PayrollPage() {
               <div key={trade.id}>
                 <div className="flex items-center gap-2 mb-1">
                   <TradeDot color={trade.color} size="sm" />
-                  <span className="text-[13px] text-ink flex-1">{trade.name}</span>
-                  <span className="text-[13px] font-bold tabular-nums">{wonShort(cost)}</span>
-                  <span className="text-[11px] text-slate-400 tabular-nums w-8 text-right">{pct.toFixed(0)}%</span>
+                  <span className="text-[0.8125rem] text-ink flex-1">{trade.name}</span>
+                  <span className="text-[0.8125rem] font-bold tabular-nums">{wonShort(cost)}</span>
+                  <span className="text-[0.6875rem] text-slate-400 tabular-nums w-8 text-right">{pct.toFixed(0)}%</span>
                 </div>
                 <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                   <div

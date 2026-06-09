@@ -77,7 +77,7 @@ export function TableTab({ site, trades, records }: Props) {
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white scrollbar-none">
-        <table className="w-full text-[13px] tabular-nums">
+        <table className="w-full text-[0.8125rem] tabular-nums">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50">
               <th className="sticky left-0 bg-slate-50 text-left px-3 py-2 font-semibold text-slate-600 min-w-[80px]">

@@ -64,7 +64,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin" />
-          <p className="text-[13px] text-slate-400">데이터를 불러오는 중...</p>
+          <p className="text-[0.8125rem] text-slate-400">데이터를 불러오는 중...</p>
         </div>
       </div>
     )

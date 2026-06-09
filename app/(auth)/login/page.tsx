@@ -1,36 +1,39 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Building2, Mail, Lock, User } from 'lucide-react'
-import { Button, Card, TextInput, Field, Segmented } from '@/components/ui'
-import { useAppStore } from '@/stores/app-store'
-import { supabase } from '@/lib/supabase'
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Building2, Mail, Lock, User } from "lucide-react";
+import { Button, Card, TextInput, Field, Segmented } from "@/components/ui";
+import { useAppStore } from "@/stores/app-store";
+import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
-  const router = useRouter()
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
+  const router = useRouter();
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      console.log('LoginPage: getUser user =', user?.email || 'none')
+      console.log("LoginPage: getUser user =", user?.email || "none");
       if (user) {
-        router.push('/dashboard')
+        router.push("/dashboard");
       }
-    })
-  }, [router])
+    });
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (mode === 'login') {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
+    e.preventDefault();
+    if (mode === "login") {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       if (error) {
-        alert(error.message)
+        alert(error.message);
       } else {
-        router.push('/dashboard')
+        router.push("/dashboard");
       }
     } else {
       const { data, error } = await supabase.auth.signUp({
@@ -38,18 +41,18 @@ export default function LoginPage() {
         password,
         options: {
           data: {
-            name: name || '신규 사용자',
+            name: name || "신규 사용자",
           },
         },
-      })
+      });
       if (error) {
-        alert(error.message)
+        alert(error.message);
       } else {
         if (data.session) {
-          router.push('/dashboard')
+          router.push("/dashboard");
         } else {
-          alert('회원가입이 완료되었습니다! 이메일 인증을 확인해 주세요.')
-          setMode('login')
+          alert("회원가입이 완료되었습니다! 이메일 인증을 확인해 주세요.");
+          setMode("login");
         }
       }
     }
@@ -57,13 +60,13 @@ export default function LoginPage() {
 
   async function handleKakao() {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'kakao',
+      provider: "kakao",
       options: {
         redirectTo: `${window.location.origin}/dashboard`,
       },
-    })
+    });
     if (error) {
-      alert(error.message)
+      alert(error.message);
     }
   }
 
@@ -75,8 +78,8 @@ export default function LoginPage() {
           <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center shadow-blue">
             <Building2 size={28} className="text-white" />
           </div>
-          <h1 className="text-[22px] font-bold text-ink">현장출근기록</h1>
-          <p className="text-[14px] text-slate-400">인테리어 현장 출근 관리</p>
+          <h1 className="text-[1.375rem] font-bold text-ink">출근 로그</h1>
+          <p className="text-sm text-slate-400">현장 출근 관리</p>
         </div>
 
         <Card>
@@ -84,16 +87,16 @@ export default function LoginPage() {
           <Segmented
             full
             value={mode}
-            onChange={(v) => setMode(v as 'login' | 'signup')}
+            onChange={(v) => setMode(v as "login" | "signup")}
             options={[
-              { value: 'login', label: '로그인' },
-              { value: 'signup', label: '회원가입' },
+              { value: "login", label: "로그인" },
+              { value: "signup", label: "회원가입" },
             ]}
             className="mb-5"
           />
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {mode === 'signup' && (
+            {mode === "signup" && (
               <Field label="이름">
                 <TextInput
                   icon={<User size={16} />}
@@ -128,14 +131,14 @@ export default function LoginPage() {
             </Field>
 
             <Button type="submit" full size="lg" className="mt-1">
-              {mode === 'login' ? '로그인' : '회원가입'}
+              {mode === "login" ? "로그인" : "회원가입"}
             </Button>
           </form>
 
           {/* Divider */}
           <div className="flex items-center gap-3 my-4">
             <div className="flex-1 h-px bg-slate-200" />
-            <span className="text-[12px] text-slate-400">또는</span>
+            <span className="text-xs text-slate-400">또는</span>
             <div className="flex-1 h-px bg-slate-200" />
           </div>
 
@@ -156,10 +159,10 @@ export default function LoginPage() {
               </svg>
             }
           >
-            카카오로 {mode === 'login' ? '로그인' : '가입'}
+            카카오로 {mode === "login" ? "로그인" : "가입"}
           </Button>
         </Card>
       </div>
     </div>
-  )
+  );
 }

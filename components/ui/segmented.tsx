@@ -29,7 +29,7 @@ export function Segmented({ value, onChange, options, full, className }: Segment
           key={opt.value}
           onClick={() => onChange(opt.value)}
           className={cn(
-            'flex-1 h-8 px-3 rounded-xs text-[13px] font-semibold transition-all',
+            'flex-1 h-8 px-3 rounded-xs text-[0.8125rem] font-semibold transition-all',
             value === opt.value
               ? 'bg-white text-blue-600 shadow-sm'
               : 'text-slate-500 hover:text-slate-700',

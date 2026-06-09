@@ -39,7 +39,7 @@ export function Sheet({ open, onClose, title, maxWidth = '480px', children }: Sh
         style={{ maxWidth }}
       >
         <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-slate-100">
-          {title && <h2 className="text-[16px] font-bold text-ink">{title}</h2>}
+          {title && <h2 className="text-base font-bold text-ink">{title}</h2>}
           <button
             onClick={onClose}
             className="ml-auto w-8 h-8 flex items-center justify-center rounded-sm text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"

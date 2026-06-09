@@ -59,7 +59,10 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   login: (user) => set({ authed: true, user }),
   logout: async () => {
-    await supabase.auth.signOut()
+    console.log('useAppStore: logout() called, authed =', get().authed)
+    if (get().authed) {
+      await supabase.auth.signOut()
+    }
     set({ authed: false, user: DEFAULT_USER, sites: [], trades: [], records: {}, journals: {} })
   },
 

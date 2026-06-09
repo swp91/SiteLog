@@ -56,9 +56,9 @@ export default function SiteDetailPage({ params }: { params: Promise<{ siteId: s
             <ChevronLeft size={22} />
           </button>
           <div className="flex-1 min-w-0">
-            <p className="text-[16px] font-bold text-ink truncate">{site.name}</p>
+            <p className="text-base font-bold text-ink truncate">{site.name}</p>
             {site.addr && (
-              <p className="flex items-center gap-1 text-[11px] text-slate-400">
+              <p className="flex items-center gap-1 text-[0.6875rem] text-slate-400">
                 <MapPin size={10} />
                 {site.addr}
               </p>

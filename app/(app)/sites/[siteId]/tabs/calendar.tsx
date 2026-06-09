@@ -63,7 +63,7 @@ export function CalendarTab({ site, trades, records, date, onPickDate }: Props) 
           >
             <ChevronLeft size={18} />
           </button>
-          <h2 className="text-[16px] font-bold text-ink">
+          <h2 className="text-base font-bold text-ink">
             {viewMonth.getFullYear()}년 {viewMonth.getMonth() + 1}월
           </h2>
           <button
@@ -77,7 +77,7 @@ export function CalendarTab({ site, trades, records, date, onPickDate }: Props) 
         {/* Weekday headers */}
         <div className="grid grid-cols-7 mb-1">
           {['월', '화', '수', '목', '금', '토', '일'].map((d, i) => (
-            <div key={d} className={cn('text-center text-[11px] font-semibold py-1', i === 6 ? 'text-red-400' : i === 5 ? 'text-blue-400' : 'text-slate-400')}>
+            <div key={d} className={cn('text-center text-[0.6875rem] font-semibold py-1', i === 6 ? 'text-red-400' : i === 5 ? 'text-blue-400' : 'text-slate-400')}>
               {d}
             </div>
           ))}
@@ -113,13 +113,13 @@ export function CalendarTab({ site, trades, records, date, onPickDate }: Props) 
                 }
               >
                 <span className={cn(
-                  'text-[13px] font-bold',
+                  'text-[0.8125rem] font-bold',
                   isSelected ? 'text-white' : dow === 6 ? 'text-red-500' : dow === 5 ? 'text-blue-500' : 'text-ink',
                 )}>
                   {d.getDate()}
                 </span>
                 {total > 0 && (
-                  <span className={cn('text-[10px] tabular-nums font-semibold', isSelected ? 'text-blue-100' : 'text-blue-700')}>
+                  <span className={cn('text-[0.625rem] tabular-nums font-semibold', isSelected ? 'text-blue-100' : 'text-blue-700')}>
                     {total}
                   </span>
                 )}
@@ -134,10 +134,10 @@ export function CalendarTab({ site, trades, records, date, onPickDate }: Props) 
 
       {/* Detail panel */}
       <div className="wide:w-64 mt-6 wide:mt-0 bg-white rounded-lg border border-slate-200 p-4">
-        <p className="text-[13px] font-semibold text-slate-500 mb-1">{fmtKDate(selected)}</p>
-        <p className="text-[28px] font-extrabold text-ink tabular-nums mb-3">{selectedTotal}명</p>
+        <p className="text-[0.8125rem] font-semibold text-slate-500 mb-1">{fmtKDate(selected)}</p>
+        <p className="text-[1.75rem] font-extrabold text-ink tabular-nums mb-3">{selectedTotal}명</p>
         {selectedTotal === 0 ? (
-          <p className="text-[13px] text-slate-400">출근 기록이 없어요</p>
+          <p className="text-[0.8125rem] text-slate-400">출근 기록이 없어요</p>
         ) : (
           <div className="flex flex-col gap-2">
             {Object.entries(selectedEntries).map(([tid, entry]) => {
@@ -146,8 +146,8 @@ export function CalendarTab({ site, trades, records, date, onPickDate }: Props) 
               return (
                 <div key={tid} className="flex items-center gap-2">
                   <TradeDot color={trade.color} size="sm" />
-                  <span className="text-[13px] text-slate-700 flex-1">{trade.name}</span>
-                  <span className="text-[13px] font-bold text-ink tabular-nums">{entry.count}명</span>
+                  <span className="text-[0.8125rem] text-slate-700 flex-1">{trade.name}</span>
+                  <span className="text-[0.8125rem] font-bold text-ink tabular-nums">{entry.count}명</span>
                 </div>
               )
             })}

@@ -30,7 +30,7 @@ export function Sidebar() {
         <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
           <Building2 size={16} className="text-white" />
         </div>
-        <span className="text-[15px] font-bold text-ink">현장출근기록</span>
+        <span className="text-[0.9375rem] font-bold text-ink">현장출근기록</span>
       </div>
 
       {/* Nav */}
@@ -42,7 +42,7 @@ export function Sidebar() {
               key={href}
               href={href}
               className={cn(
-                'flex items-center gap-3 mx-2 px-3 h-10 rounded-sm text-[14px] font-medium transition-colors',
+                'flex items-center gap-3 mx-2 px-3 h-10 rounded-sm text-sm font-medium transition-colors',
                 active
                   ? 'bg-blue-50 text-blue-600 font-semibold'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800',
@@ -68,14 +68,14 @@ export function Sidebar() {
         >
           <Avatar name={user.avatar} size="sm" />
           <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold text-ink truncate">{user.name}</p>
-            <p className="text-[11px] text-slate-400 truncate">{user.role}</p>
+            <p className="text-[0.8125rem] font-semibold text-ink truncate">{user.name}</p>
+            <p className="text-[0.6875rem] text-slate-400 truncate">{user.role}</p>
           </div>
           <Settings size={15} className="text-slate-400 shrink-0" />
         </Link>
         <button
           onClick={logout}
-          className="flex items-center gap-2 w-full mt-1 px-2 py-1.5 rounded-xs text-[13px] text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors"
+          className="flex items-center gap-2 w-full mt-1 px-2 py-1.5 rounded-xs text-[0.8125rem] text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors"
         >
           <LogOut size={14} />
           로그아웃
