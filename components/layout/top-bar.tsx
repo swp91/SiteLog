@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, Building2 } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface TopBarProps {
@@ -28,9 +28,7 @@ export function TopBar({ title, back, className }: TopBarProps) {
           <ChevronLeft size={22} />
         </button>
       ) : (
-        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-          <Building2 size={15} className="text-white" />
-        </div>
+        <img src="/logo.svg" alt="SiteLog Logo" className="w-8 h-8 object-contain" />
       )}
       <h1 className="flex-1 text-center text-base font-bold text-ink px-2 truncate">
         {title ?? '현장출근기록'}
