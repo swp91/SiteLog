@@ -18,6 +18,7 @@ interface AppState {
   login: (user: AppUser) => void
   logout: () => void
   fetchData: () => Promise<void>
+  updateProfile: (patch: { name: string; phone?: string }) => Promise<void>
 
   // sites CRUD
   addSite: (site: Omit<Site, 'id'>) => Promise<void>
@@ -365,6 +366,33 @@ export const useAppStore = create<AppState>((set, get) => ({
         }))
       }
     }
+  },
+
+  updateProfile: async (patch) => {
+    const { user } = get()
+    if (!user || !user.id) return
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        name: patch.name,
+        phone: patch.phone || null,
+      })
+      .eq('id', user.id)
+
+    if (error) {
+      console.error('Failed to update profile:', error)
+      throw error
+    }
+
+    set((s) => ({
+      user: {
+        ...s.user,
+        name: patch.name,
+        phone: patch.phone || '',
+        avatar: patch.name ? patch.name[0] : s.user.avatar,
+      },
+    }))
   },
 
   flash: (message) => {

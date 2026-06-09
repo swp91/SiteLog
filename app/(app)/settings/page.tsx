@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation'
 import { LogOut, Bell, ChevronRight } from 'lucide-react'
 import { useAppStore } from '@/stores/app-store'
 import { TopBar } from '@/components/layout/top-bar'
-import { Card, Avatar, Button } from '@/components/ui'
+import { Card, Avatar, Button, Sheet, TextInput, Field } from '@/components/ui'
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { user, sites, records, logout } = useAppStore()
+  const { user, sites, records, logout, updateProfile, flash } = useAppStore()
 
   const [alerts, setAlerts] = useState({
     missing: true,
@@ -17,12 +17,44 @@ export default function SettingsPage() {
     trade: true,
   })
 
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [editName, setEditName] = useState('')
+  const [editPhone, setEditPhone] = useState('')
+  const [saving, setSaving] = useState(false)
+
   const totalEntries = Object.keys(records).length
   const activeSiteCount = sites.filter((s) => s.status !== '완료').length
 
   async function handleLogout() {
     await logout()
     router.push('/login')
+  }
+
+  function handleOpenEdit() {
+    setEditName(user.name)
+    setEditPhone(user.phone || '')
+    setIsEditOpen(true)
+  }
+
+  async function handleSaveProfile(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editName.trim()) {
+      alert('이름을 입력하세요.')
+      return
+    }
+    setSaving(true)
+    try {
+      await updateProfile({
+        name: editName.trim(),
+        phone: editPhone.trim() || undefined,
+      })
+      flash('프로필이 수정되었습니다.')
+      setIsEditOpen(false)
+    } catch (err: any) {
+      alert(err.message || '프로필 수정에 실패했습니다.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -38,7 +70,7 @@ export default function SettingsPage() {
             <p className="text-[0.8125rem] text-slate-500">{user.role}</p>
             {user.company && <p className="text-xs text-slate-400">{user.company}</p>}
           </div>
-          <Button size="sm" variant="outline">편집</Button>
+          <Button size="sm" variant="outline" onClick={handleOpenEdit}>편집</Button>
         </div>
         <div className="flex gap-4 pt-3 border-t border-slate-100">
           <div className="text-center flex-1">
@@ -115,6 +147,41 @@ export default function SettingsPage() {
       >
         로그아웃
       </Button>
+
+      {/* Profile Edit Sheet */}
+      <Sheet open={isEditOpen} onClose={() => setIsEditOpen(false)} title="프로필 편집">
+        <form onSubmit={handleSaveProfile} className="flex flex-col gap-4">
+          <Field label="이름">
+            <TextInput
+              placeholder="이름을 입력하세요"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              required
+            />
+          </Field>
+          <Field label="휴대폰 번호">
+            <TextInput
+              placeholder="휴대폰 번호 (예: 010-1234-5678)"
+              value={editPhone}
+              onChange={(e) => setEditPhone(e.target.value)}
+            />
+          </Field>
+          <div className="flex gap-3 mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              full
+              onClick={() => setIsEditOpen(false)}
+              disabled={saving}
+            >
+              취소
+            </Button>
+            <Button type="submit" full disabled={saving}>
+              {saving ? '저장 중...' : '저장'}
+            </Button>
+          </div>
+        </form>
+      </Sheet>
     </div>
   )
 }
