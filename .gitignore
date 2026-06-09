@@ -22,3 +22,8 @@ next-env.d.ts
 .DS_Store
 *.pem
 npm-debug.log*
+
+.mcp.json
+.claude/
+.env
+.env.local
