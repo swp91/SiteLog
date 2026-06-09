@@ -20,8 +20,8 @@ export default function SettingsPage() {
   const totalEntries = Object.keys(records).length
   const activeSiteCount = sites.filter((s) => s.status !== '완료').length
 
-  function handleLogout() {
-    logout()
+  async function handleLogout() {
+    await logout()
     router.push('/login')
   }
 
