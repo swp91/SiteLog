@@ -16,6 +16,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
+      console.log('LoginPage: getUser user =', user?.email || 'none')
       if (user) {
         router.push('/dashboard')
       }
