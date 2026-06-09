@@ -48,7 +48,7 @@ export default function SitesPage() {
   function save() {
     if (!draft.name.trim() || sheet === null) return
     if (sheet === 'new') {
-      addSite({ ...draft, id: `s${Date.now()}` })
+      addSite(draft)
       flash('현장이 추가되었어요')
     } else {
       updateSite({ ...sheet, ...draft })
