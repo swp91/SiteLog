@@ -20,8 +20,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser()
+      console.log('AppShell: checkAuth user =', user?.email || 'none')
       if (!user) {
-        logout()
+        await logout()
         router.push('/login')
       } else {
         try {
@@ -37,8 +38,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     checkAuth()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('AppShell: onAuthStateChange event =', event, 'user =', session?.user?.email || 'none')
       if (event === 'SIGNED_OUT') {
-        logout()
+        await logout()
         router.push('/login')
       } else if (event === 'SIGNED_IN' && session) {
         try {
