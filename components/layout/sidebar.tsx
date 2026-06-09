@@ -27,9 +27,7 @@ export function Sidebar() {
     <aside className="hidden wide:flex flex-col w-[244px] shrink-0 h-screen bg-white border-r border-slate-200 fixed top-0 left-0 z-30">
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 h-16 border-b border-slate-100">
-        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-          <Building2 size={16} className="text-white" />
-        </div>
+        <img src="/logo.svg" alt="SiteLog Logo" className="w-8 h-8 object-contain" />
         <span className="text-[0.9375rem] font-bold text-ink">현장출근기록</span>
       </div>
 
