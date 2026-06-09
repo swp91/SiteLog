@@ -41,7 +41,7 @@ export default function TradesPage() {
   function save() {
     if (!draft.name.trim() || sheet === null) return
     if (sheet === 'new') {
-      addTrade({ ...draft, id: `t${Date.now()}` })
+      addTrade(draft)
       flash('공종이 추가되었어요')
     } else {
       updateTrade({ ...sheet, ...draft })
