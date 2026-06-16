@@ -4,13 +4,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Building2, Calendar, BarChart2,
-  DollarSign, Wrench, LogOut, Settings,
+  DollarSign, Wrench, LogOut, Settings, WalletCards,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar } from '@/components/ui'
 import { useAppStore } from '@/stores/app-store'
 
-const NAV_ITEMS = [
+const MANAGER_NAV_ITEMS = [
   { href: '/dashboard', icon: LayoutDashboard, label: '대시보드' },
   { href: '/sites',     icon: Building2,       label: '현장' },
   { href: '/calendar',  icon: Calendar,        label: '통합 달력' },
@@ -19,21 +19,26 @@ const NAV_ITEMS = [
   { href: '/trades',    icon: Wrench,          label: '공종 · 업체' },
 ]
 
+const WORKER_NAV_ITEMS = [
+  { href: '/worker', icon: WalletCards, label: '내 공수 장부' },
+]
+
 export function Sidebar() {
   const pathname = usePathname()
   const { user, logout } = useAppStore()
+  const navItems = user.type === 'worker' ? WORKER_NAV_ITEMS : MANAGER_NAV_ITEMS
 
   return (
     <aside className="hidden wide:flex flex-col w-[244px] shrink-0 h-screen bg-white border-r border-slate-200 fixed top-0 left-0 z-30">
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 h-16 border-b border-slate-100">
         <img src="/Sitelog-logo.svg" alt="SiteLog Logo" className="w-8 h-8 object-contain" />
-        <span className="text-[0.9375rem] font-bold text-ink">현장출근기록</span>
+        <span className="text-[0.9375rem] font-bold text-ink">SiteLog</span>
       </div>
 
       {/* Nav */}
       <nav className="flex-1 py-3 overflow-y-auto">
-        {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
+        {navItems.map(({ href, icon: Icon, label }) => {
           const active = pathname === href || pathname.startsWith(href + '/')
           return (
             <Link

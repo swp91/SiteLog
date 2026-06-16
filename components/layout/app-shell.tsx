@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, type ReactNode } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Sidebar } from './sidebar'
 import { BottomNav } from './bottom-nav'
 import { Toast } from '@/components/ui'
@@ -9,6 +9,7 @@ import { useAppStore } from '@/stores/app-store'
 
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
   const toast = useAppStore((s) => s.toast)
   const authed = useAppStore((s) => s.authed)
   const fetchData = useAppStore((s) => s.fetchData)
@@ -24,6 +25,14 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       if (!useAppStore.getState().authed) {
         router.replace('/login')
+      } else {
+        const state = useAppStore.getState()
+        if (state.user.type === 'worker' && !pathname.startsWith('/worker') && pathname !== '/settings') {
+          router.replace('/worker')
+        }
+        if (state.user.type === 'manager' && pathname.startsWith('/worker')) {
+          router.replace('/dashboard')
+        }
       }
 
       if (active) setLoading(false)
@@ -34,7 +43,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => {
       active = false
     }
-  }, [authed, fetchData, router])
+  }, [authed, fetchData, pathname, router])
 
   if (loading) {
     return (

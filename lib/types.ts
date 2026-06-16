@@ -1,4 +1,6 @@
 export type SiteStatus = '진행중' | '마감임박' | '완료'
+export type UserType = 'manager' | 'worker'
+export type PaymentStatus = 'unpaid' | 'paid'
 
 export interface Trade {
   id: string
@@ -42,6 +44,7 @@ export type Journals = Record<string, Journal>
 export interface AppUser {
   id: string
   org_id: string
+  type: UserType
   name: string
   role: string
   email: string
@@ -49,4 +52,22 @@ export interface AppUser {
   phone?: string
   company?: string
   joined?: string
+}
+
+export interface WorkerSite {
+  id: string
+  name: string
+  defaultRate: number
+  color: string
+  memo?: string
+}
+
+export interface WorkerRecord {
+  id: string
+  date: string
+  siteId: string
+  manDay: number
+  rate: number
+  memo?: string
+  paymentStatus: PaymentStatus
 }

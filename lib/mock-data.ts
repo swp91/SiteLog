@@ -1,4 +1,4 @@
-import type { AppUser, Journals, Records, Site, Trade } from './types'
+import type { AppUser, Journals, Records, Site, Trade, UserType, WorkerRecord, WorkerSite } from './types'
 import { addDays, ymd } from './utils'
 
 const today = new Date()
@@ -7,12 +7,26 @@ today.setHours(0, 0, 0, 0)
 export const DEMO_USER: AppUser = {
   id: 'demo-user',
   org_id: 'demo-org',
+  type: 'manager',
   name: '김현장',
   role: '관리자',
   email: 'demo@sitelog.local',
   avatar: '김',
   phone: '010-1234-5678',
   company: '사이트로그 데모',
+  joined: '2026-06',
+}
+
+export const DEMO_WORKER_USER: AppUser = {
+  id: 'demo-worker',
+  org_id: 'worker-private',
+  type: 'worker',
+  name: '이공수',
+  role: '노동자',
+  email: 'worker@sitelog.local',
+  avatar: '이',
+  phone: '010-9876-5432',
+  company: '개인 공수 장부',
   joined: '2026-06',
 }
 
@@ -78,6 +92,48 @@ export const SEED_JOURNALS: Journals = {
   },
 }
 
+export const SEED_WORKER_SITES: WorkerSite[] = [
+  { id: 'worker-site-1', name: '아산 현장', defaultRate: 180000, color: '#2563EB' },
+  { id: 'worker-site-2', name: '천안 현장', defaultRate: 200000, color: '#14B8A6' },
+  { id: 'worker-site-3', name: '서울 오피스', defaultRate: 220000, color: '#F59E0B' },
+]
+
+export const SEED_WORKER_RECORDS: WorkerRecord[] = [
+  {
+    id: 'worker-record-1',
+    date: ymd(addDays(today, -12)),
+    siteId: 'worker-site-1',
+    manDay: 1,
+    rate: 180000,
+    paymentStatus: 'paid',
+  },
+  {
+    id: 'worker-record-2',
+    date: ymd(addDays(today, -8)),
+    siteId: 'worker-site-2',
+    manDay: 1.5,
+    rate: 200000,
+    paymentStatus: 'unpaid',
+    memo: '야간 정리 포함',
+  },
+  {
+    id: 'worker-record-3',
+    date: ymd(addDays(today, -3)),
+    siteId: 'worker-site-3',
+    manDay: 1,
+    rate: 220000,
+    paymentStatus: 'unpaid',
+  },
+  {
+    id: 'worker-record-4',
+    date: ymd(today),
+    siteId: 'worker-site-1',
+    manDay: 0.5,
+    rate: 180000,
+    paymentStatus: 'unpaid',
+  },
+]
+
 export function cloneDemoData() {
   return {
     user: { ...DEMO_USER },
@@ -85,5 +141,11 @@ export function cloneDemoData() {
     trades: SEED_TRADES.map((trade) => ({ ...trade })),
     records: structuredClone(SEED_RECORDS),
     journals: structuredClone(SEED_JOURNALS),
+    workerSites: SEED_WORKER_SITES.map((site) => ({ ...site })),
+    workerRecords: SEED_WORKER_RECORDS.map((record) => ({ ...record })),
   }
+}
+
+export function cloneUserForType(type: UserType) {
+  return type === 'worker' ? { ...DEMO_WORKER_USER } : { ...DEMO_USER }
 }
