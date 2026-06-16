@@ -1,9 +1,11 @@
 'use client'
 
 import { create } from 'zustand'
-import type { Site, Trade, Records, Journals, AppUser } from '@/lib/types'
+import type { AppUser, Journals, Records, Site, Trade } from '@/lib/types'
+import { cloneDemoData, DEMO_USER } from '@/lib/mock-data'
 import { withEntry } from '@/lib/utils'
-import { supabase } from '@/lib/supabase'
+
+const DEMO_SESSION_KEY = 'sitelog-demo-session'
 
 interface AppState {
   authed: boolean
@@ -15,8 +17,8 @@ interface AppState {
   toast: string
 
   // auth
-  login: (user: AppUser) => void
-  logout: () => void
+  login: (user?: AppUser) => void
+  logout: () => Promise<void>
   fetchData: () => Promise<void>
   updateProfile: (patch: { name: string; phone?: string }) => Promise<void>
 
@@ -40,7 +42,7 @@ interface AppState {
   flash: (message: string) => void
 }
 
-const DEFAULT_USER: AppUser = {
+const EMPTY_USER: AppUser = {
   id: '',
   org_id: '',
   name: '',
@@ -49,342 +51,134 @@ const DEFAULT_USER: AppUser = {
   avatar: '',
 }
 
+function createId(prefix: string) {
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+function setDemoSession(enabled: boolean) {
+  if (typeof window === 'undefined') return
+  if (enabled) {
+    window.sessionStorage.setItem(DEMO_SESSION_KEY, '1')
+  } else {
+    window.sessionStorage.removeItem(DEMO_SESSION_KEY)
+  }
+}
+
+function hasDemoSession() {
+  return typeof window !== 'undefined' && window.sessionStorage.getItem(DEMO_SESSION_KEY) === '1'
+}
+
 export const useAppStore = create<AppState>((set, get) => ({
   authed: false,
-  user: DEFAULT_USER,
+  user: EMPTY_USER,
   sites: [],
   trades: [],
   records: {},
   journals: {},
   toast: '',
 
-  login: (user) => set({ authed: true, user }),
+  login: (user = DEMO_USER) => {
+    const data = cloneDemoData()
+    setDemoSession(true)
+    set({
+      authed: true,
+      user: { ...data.user, ...user },
+      sites: data.sites,
+      trades: data.trades,
+      records: data.records,
+      journals: data.journals,
+    })
+  },
+
   logout: async () => {
-    console.log('useAppStore: logout() called, authed =', get().authed)
-    if (get().authed) {
-      await supabase.auth.signOut()
-    }
-    set({ authed: false, user: DEFAULT_USER, sites: [], trades: [], records: {}, journals: {} })
+    setDemoSession(false)
+    set({ authed: false, user: EMPTY_USER, sites: [], trades: [], records: {}, journals: {} })
   },
 
   fetchData: async () => {
-    const { data: { user: authUser } } = await supabase.auth.getUser()
-    if (!authUser) return
+    if (!hasDemoSession()) return
 
-    // Fetch profile
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*, orgs(name)')
-      .eq('id', authUser.id)
-      .single()
-
-    if (!profile) return
-
-    const mappedUser: AppUser = {
-      id: profile.id,
-      org_id: profile.org_id,
-      name: profile.name,
-      role: profile.role,
-      email: authUser.email || '',
-      avatar: profile.avatar_url || (profile.name ? profile.name[0] : ''),
-      phone: profile.phone || '',
-      company: profile.orgs?.name || '',
-      joined: profile.created_at ? new Date(profile.created_at).toISOString().slice(0, 7) : '',
-    }
-
-    // Fetch sites
-    const { data: sitesData } = await supabase
-      .from('sites')
-      .select('*')
-      .eq('org_id', profile.org_id)
-
-    // Fetch trades
-    const { data: tradesData } = await supabase
-      .from('trades')
-      .select('*')
-      .eq('org_id', profile.org_id)
-      .order('sort_order', { ascending: true })
-
-    // Fetch attendance
-    const { data: attendanceData } = await supabase
-      .from('attendance')
-      .select('*, sites!inner(org_id)')
-      .eq('sites.org_id', profile.org_id)
-
-    // Fetch journals
-    const { data: journalsData } = await supabase
-      .from('journals')
-      .select('*, sites!inner(org_id)')
-      .eq('sites.org_id', profile.org_id)
-
-    const sites = (sitesData || []).map((s) => ({
-      id: s.id,
-      name: s.name,
-      addr: s.addr || '',
-      status: s.status,
-      start: s.start_date || '',
-      manager: s.manager_name || '',
-    }))
-
-    const trades = (tradesData || []).map((t) => ({
-      id: t.id,
-      name: t.name,
-      color: t.color,
-      rate: t.rate,
-      company: t.company || '',
-      contact: t.contact || '',
-      phone: t.phone || '',
-      sort_order: t.sort_order,
-    }))
-
-    const records: Records = {}
-    if (attendanceData) {
-      for (const item of attendanceData) {
-        const key = `${item.site_id}|${item.work_date}`
-        if (!records[key]) records[key] = {}
-        records[key][item.trade_id] = {
-          count: item.count,
-          memo: item.memo || '',
-        }
-      }
-    }
-
-    const journals: Journals = {}
-    if (journalsData) {
-      for (const item of journalsData) {
-        const key = `${item.site_id}|${item.work_date}`
-        journals[key] = {
-          memo: item.memo || '',
-          photos: 0,
-        }
-      }
-    }
-
+    const data = cloneDemoData()
     set({
       authed: true,
-      user: mappedUser,
-      sites,
-      trades,
-      records,
-      journals,
+      user: data.user,
+      sites: data.sites,
+      trades: data.trades,
+      records: data.records,
+      journals: data.journals,
     })
   },
 
   addSite: async (site) => {
-    const { user } = get()
-    if (!user || !user.org_id) return
-
-    const { data, error } = await supabase
-      .from('sites')
-      .insert({
-        org_id: user.org_id,
-        name: site.name,
-        addr: site.addr || null,
-        status: site.status,
-        start_date: site.start || null,
-        manager_name: site.manager || null,
-      })
-      .select()
-      .single()
-
-    if (data && !error) {
-      const newSite: Site = {
-        id: data.id,
-        name: data.name,
-        addr: data.addr || '',
-        status: data.status,
-        start: data.start_date || '',
-        manager: data.manager_name || '',
-      }
-      set((s) => ({ sites: [...s.sites, newSite] }))
-    }
+    const newSite: Site = { ...site, id: createId('site') }
+    set((s) => ({ sites: [...s.sites, newSite] }))
   },
 
   updateSite: async (site) => {
-    const { error } = await supabase
-      .from('sites')
-      .update({
-        name: site.name,
-        addr: site.addr || null,
-        status: site.status,
-        start_date: site.start || null,
-        manager_name: site.manager || null,
-      })
-      .eq('id', site.id)
-
-    if (!error) {
-      set((s) => ({ sites: s.sites.map((x) => (x.id === site.id ? site : x)) }))
-    }
+    set((s) => ({ sites: s.sites.map((x) => (x.id === site.id ? site : x)) }))
   },
 
   deleteSite: async (id) => {
-    const { error } = await supabase.from('sites').delete().eq('id', id)
-    if (!error) {
-      set((s) => ({ sites: s.sites.filter((x) => x.id !== id) }))
-    }
+    set((s) => ({
+      sites: s.sites.filter((x) => x.id !== id),
+      records: Object.fromEntries(Object.entries(s.records).filter(([key]) => !key.startsWith(`${id}|`))),
+      journals: Object.fromEntries(Object.entries(s.journals).filter(([key]) => !key.startsWith(`${id}|`))),
+    }))
   },
 
   addTrade: async (trade) => {
-    const { user } = get()
-    if (!user || !user.org_id) return
-
-    const { data, error } = await supabase
-      .from('trades')
-      .insert({
-        org_id: user.org_id,
-        name: trade.name,
-        color: trade.color,
-        rate: trade.rate,
-        company: trade.company || null,
-        contact: trade.contact || null,
-        phone: trade.phone || null,
-        sort_order: trade.sort_order ?? 0,
-      })
-      .select()
-      .single()
-
-    if (data && !error) {
-      const newTrade: Trade = {
-        id: data.id,
-        name: data.name,
-        color: data.color,
-        rate: data.rate,
-        company: data.company || '',
-        contact: data.contact || '',
-        phone: data.phone || '',
-        sort_order: data.sort_order,
-      }
-      set((s) => ({ trades: [...s.trades, newTrade] }))
-    }
+    const newTrade: Trade = { ...trade, id: createId('trade') }
+    set((s) => ({ trades: [...s.trades, newTrade] }))
   },
 
   updateTrade: async (trade) => {
-    const { error } = await supabase
-      .from('trades')
-      .update({
-        name: trade.name,
-        color: trade.color,
-        rate: trade.rate,
-        company: trade.company || null,
-        contact: trade.contact || null,
-        phone: trade.phone || null,
-        sort_order: trade.sort_order ?? 0,
-      })
-      .eq('id', trade.id)
-
-    if (!error) {
-      set((s) => ({ trades: s.trades.map((x) => (x.id === trade.id ? trade : x)) }))
-    }
+    set((s) => ({ trades: s.trades.map((x) => (x.id === trade.id ? trade : x)) }))
   },
 
   deleteTrade: async (id) => {
-    const { error } = await supabase.from('trades').delete().eq('id', id)
-    if (!error) {
-      set((s) => ({ trades: s.trades.filter((x) => x.id !== id) }))
-    }
+    set((s) => {
+      const records = Object.fromEntries(
+        Object.entries(s.records)
+          .map(([key, day]) => {
+            const { [id]: _, ...rest } = day
+            return [key, rest] as const
+          })
+          .filter(([, day]) => Object.keys(day).length > 0),
+      )
+
+      return {
+        trades: s.trades.filter((x) => x.id !== id),
+        records,
+      }
+    })
   },
 
   setAttendance: async (siteId, dateStr, tradeId, patch) => {
-    const { user, records } = get()
-    if (!user) return
-
-    const key = `${siteId}|${dateStr}`
-    const prev = records[key] ?? {}
-    const entry = { ...(prev[tradeId] ?? { count: 0, memo: '' }), ...patch }
-
-    const isZero = entry.count === 0 && !entry.memo
-
-    if (isZero) {
-      const { error } = await supabase
-        .from('attendance')
-        .delete()
-        .match({ site_id: siteId, trade_id: tradeId, work_date: dateStr })
-
-      if (!error) {
-        set((s) => ({ records: withEntry(s.records, siteId, dateStr, tradeId, patch) }))
-      }
-    } else {
-      const { error } = await supabase
-        .from('attendance')
-        .upsert({
-          site_id: siteId,
-          trade_id: tradeId,
-          work_date: dateStr,
-          count: entry.count,
-          memo: entry.memo || '',
-          updated_by: user.id || null,
-        }, {
-          onConflict: 'site_id,trade_id,work_date',
-        })
-
-      if (!error) {
-        set((s) => ({ records: withEntry(s.records, siteId, dateStr, tradeId, patch) }))
-      }
-    }
+    set((s) => ({ records: withEntry(s.records, siteId, dateStr, tradeId, patch) }))
   },
 
   setJournal: async (siteId, dateStr, patch) => {
-    const { user, journals } = get()
-    if (!user) return
-
     const key = `${siteId}|${dateStr}`
-    const prev = journals[key] ?? {}
-    const entry = { ...(prev ?? { memo: '', photos: 0 }), ...patch }
 
-    const isZero = !entry.memo
+    set((s) => {
+      const prev = s.journals[key] ?? { memo: '', photos: 0 }
+      const next = { ...prev, ...patch }
 
-    if (isZero) {
-      const { error } = await supabase
-        .from('journals')
-        .delete()
-        .match({ site_id: siteId, work_date: dateStr })
-
-      if (!error) {
-        set((s) => {
-          const { [key]: _, ...rest } = s.journals
-          return { journals: rest }
-        })
+      if (!next.memo && !next.photos) {
+        const { [key]: _, ...rest } = s.journals
+        return { journals: rest }
       }
-    } else {
-      const { error } = await supabase
-        .from('journals')
-        .upsert({
-          site_id: siteId,
-          work_date: dateStr,
-          memo: entry.memo || '',
-          updated_by: user.id || null,
-        }, {
-          onConflict: 'site_id,work_date',
-        })
 
-      if (!error) {
-        set((s) => ({
-          journals: {
-            ...s.journals,
-            [key]: { ...prev, ...patch },
-          },
-        }))
+      return {
+        journals: {
+          ...s.journals,
+          [key]: next,
+        },
       }
-    }
+    })
   },
 
   updateProfile: async (patch) => {
-    const { user } = get()
-    if (!user || !user.id) return
-
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        name: patch.name,
-        phone: patch.phone || null,
-      })
-      .eq('id', user.id)
-
-    if (error) {
-      console.error('Failed to update profile:', error)
-      throw error
-    }
-
     set((s) => ({
       user: {
         ...s.user,
