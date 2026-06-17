@@ -63,7 +63,7 @@
 @media print {
   @page {
     size: A4 landscape;
-    margin: 12mm;
+    margin: 0;
   }
 
   body {
@@ -83,7 +83,7 @@
     display: block;
     position: absolute;
     inset: 0;
-    padding: 0;
+    padding: 10mm;
   }
 
   .report-month {

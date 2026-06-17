@@ -145,7 +145,14 @@ export function TableTab({ site, trades, records }: Props) {
 
   function printReport() {
     setPreviewOpen(false)
-    window.setTimeout(() => window.print(), 50)
+    const prevTitle = document.title
+    document.title = ' '
+    window.setTimeout(() => {
+      window.print()
+      window.setTimeout(() => {
+        document.title = prevTitle
+      }, 300)
+    }, 50)
   }
 
   const summaryBoard = (
@@ -317,7 +324,6 @@ function ReportPreview({
           </h2>
           <p className="mt-2 text-sm text-slate-500">기간 {period}</p>
         </div>
-        <p className="pt-2 text-right text-xs font-medium text-slate-400">현장출근기록</p>
       </div>
 
       <div className="mb-6 grid grid-cols-5 gap-3">
