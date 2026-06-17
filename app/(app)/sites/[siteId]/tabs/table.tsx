@@ -326,18 +326,10 @@ function ReportPreview({
         </div>
       </div>
 
-      <div className="mb-6 grid grid-cols-5 gap-3">
+      <div className="mb-6 grid grid-cols-3 gap-3">
         <MetricCard label="총 공수" value={formatManDay(grandTotal)} unit="공수" strong />
         <MetricCard label="작업 기간" value={formatManDay(days.length)} unit="일" />
         <MetricCard label="참여 공종" value={formatManDay(trades.length)} unit="개" />
-        {monthGroups.slice(-2).map((group) => (
-          <MetricCard
-            key={group.key}
-            label={`${group.label.replace(/^\d{4}년 /, '')} 공수`}
-            value={formatManDay(totalForDays(group.days))}
-            unit="공수"
-          />
-        ))}
       </div>
 
       <div className="mb-6 grid grid-cols-[0.95fr_1fr] gap-4">
@@ -348,7 +340,7 @@ function ReportPreview({
               const total = totalForDays(group.days)
               const width = `${Math.max(8, (total / maxMonthTotal) * 100)}%`
               return (
-                <div key={group.key} className="grid grid-cols-[90px_1fr_72px] items-center gap-3">
+                <div key={group.key} className="grid grid-cols-[90px_1fr_86px] items-center gap-3">
                   <p className="text-sm font-medium text-slate-600">{group.label}</p>
                   <div className="h-5 overflow-hidden rounded-full bg-slate-100">
                     <div
