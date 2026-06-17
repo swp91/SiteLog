@@ -259,7 +259,7 @@ export function TableTab({ site, trades, records }: Props) {
 
       <div className="mt-4">{summaryBoard}</div>
 
-      <Sheet open={previewOpen} onClose={() => setPreviewOpen(false)} title="PDF 미리보기" maxWidth="920px">
+      <Sheet open={previewOpen} onClose={() => setPreviewOpen(false)} title="PDF 미리보기" maxWidth="1100px">
         {report}
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="outline" onClick={() => setPreviewOpen(false)}>
@@ -303,52 +303,111 @@ function ReportPreview({
   totalForDays,
   activeTradesForDays,
   grandTotal,
-  summaryBoard,
 }: ReportPreviewProps) {
+  const cumulativeTrades = [...trades].sort((a, b) => tradeTotal(b.id) - tradeTotal(a.id))
+  const maxMonthTotal = Math.max(...monthGroups.map((group) => totalForDays(group.days)), 1)
+  const detailGroup = monthGroups[monthGroups.length - 1]
+  const detailTrades = detailGroup ? activeTradesForDays(detailGroup.days) : []
+
   return (
-    <section className="bg-white text-ink">
-      <div className="mb-5">
-        <p className="text-sm font-semibold text-blue-600">출근기록 보고서</p>
-        <h2 className="mt-1 text-2xl font-extrabold">{siteName}</h2>
-        <p className="mt-1 text-sm text-slate-500">기간 {period}</p>
+    <section className="report-page rounded-xl bg-slate-50 p-6 text-ink">
+      <div className="mb-6 flex items-start justify-between gap-6">
+        <div>
+          <p className="text-sm font-semibold text-blue-600">출근기록 보고서</p>
+          <h2 className="mt-1 text-[1.65rem] font-extrabold leading-tight tracking-normal">
+            {siteName} 인테리어 공종별 출근기록부
+          </h2>
+          <p className="mt-2 text-sm text-slate-500">기간 {period}</p>
+        </div>
+        <p className="pt-2 text-right text-xs font-medium text-slate-400">현장출근기록</p>
       </div>
 
-      <div className="mb-5 grid grid-cols-3 gap-2">
-        <SummaryBox label="기간" value={`${days.length}일`} />
-        <SummaryBox label="공종" value={`${trades.length}개`} />
-        <SummaryBox label="총 공수" value={`${formatManDay(grandTotal)}공수`} strong />
-      </div>
-
-      <div className="space-y-5">
-        {monthGroups.map((group) => (
-          <MonthReport
+      <div className="mb-6 grid grid-cols-5 gap-3">
+        <MetricCard label="총 공수" value={formatManDay(grandTotal)} unit="공수" strong />
+        <MetricCard label="작업 기간" value={formatManDay(days.length)} unit="일" />
+        <MetricCard label="참여 공종" value={formatManDay(trades.length)} unit="개" />
+        {monthGroups.slice(-2).map((group) => (
+          <MetricCard
             key={group.key}
-            group={group}
-            trades={activeTradesForDays(group.days)}
-            getCount={getCount}
-            tradeTotal={tradeTotal}
-            dayColTotal={dayColTotal}
-            total={totalForDays(group.days)}
+            label={`${group.label.replace(/^\d{4}년 /, '')} 공수`}
+            value={formatManDay(totalForDays(group.days))}
+            unit="공수"
           />
         ))}
       </div>
 
-      <div className="mt-5">{summaryBoard}</div>
+      <div className="mb-6 grid grid-cols-[0.95fr_1fr] gap-4">
+        <section className="rounded-xl border border-slate-200 bg-white p-5">
+          <h3 className="mb-4 text-base font-extrabold">월별 공수 현황</h3>
+          <div className="space-y-4">
+            {monthGroups.map((group, index) => {
+              const total = totalForDays(group.days)
+              const width = `${Math.max(8, (total / maxMonthTotal) * 100)}%`
+              return (
+                <div key={group.key} className="grid grid-cols-[90px_1fr_72px] items-center gap-3">
+                  <p className="text-sm font-medium text-slate-600">{group.label}</p>
+                  <div className="h-5 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className={`h-full rounded-full ${index === monthGroups.length - 1 ? 'bg-blue-600' : 'bg-slate-400'}`}
+                      style={{ width }}
+                    />
+                  </div>
+                  <p className="text-right text-sm font-bold text-ink">{formatManDay(total)} 공수</p>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-slate-200 bg-white p-5">
+          <h3 className="mb-4 text-base font-extrabold">공종별 누적 공수</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {cumulativeTrades.map((trade) => (
+              <div key={trade.id} className="flex items-center justify-between rounded-md bg-slate-50 px-3 py-1.5 text-sm">
+                <span className="truncate text-slate-600">{trade.name}</span>
+                <span className="font-bold text-blue-600">{formatManDay(tradeTotal(trade.id))}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {detailGroup && (
+        <section className="rounded-xl border border-slate-200 bg-white p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-lg font-extrabold">{detailGroup.label} 상세 출근 현황</h3>
+            <p className="text-sm font-semibold text-blue-600">월 공수 {formatManDay(totalForDays(detailGroup.days))}공수</p>
+          </div>
+          <AttendanceMatrix
+            days={detailGroup.days}
+            trades={detailTrades}
+            getCount={getCount}
+            tradeTotal={tradeTotal}
+            dayColTotal={dayColTotal}
+            total={totalForDays(detailGroup.days)}
+          />
+        </section>
+      )}
+
+      <p className="mt-4 text-xs text-slate-400">※ 공수는 작업 인원 x 작업일 기준으로 집계</p>
     </section>
   )
 }
 
-function SummaryBox({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+function MetricCard({ label, value, unit, strong }: { label: string; value: string; unit: string; strong?: boolean }) {
   return (
-    <div className="rounded border border-slate-200 p-3">
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className={`mt-1 text-lg font-bold ${strong ? 'text-blue-600' : 'text-ink'}`}>{value}</p>
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <p className={`mt-2 text-2xl font-extrabold tracking-normal ${strong ? 'text-blue-600' : 'text-ink'}`}>
+        {value}
+        <span className="ml-1 text-sm font-medium text-slate-500">{unit}</span>
+      </p>
     </div>
   )
 }
 
-interface MonthReportProps {
-  group: MonthGroup
+interface AttendanceMatrixProps {
+  days: Date[]
   trades: Trade[]
   getCount: (tradeId: string, d: Date) => number
   tradeTotal: (tradeId: string, targetDays?: Date[]) => number
@@ -356,65 +415,53 @@ interface MonthReportProps {
   total: number
 }
 
-function MonthReport({ group, trades, getCount, tradeTotal, dayColTotal, total }: MonthReportProps) {
+function AttendanceMatrix({ days, trades, getCount, tradeTotal, dayColTotal, total }: AttendanceMatrixProps) {
   return (
-    <section className="report-month">
-      <div className="mb-2 flex items-end justify-between">
-        <h3 className="text-base font-extrabold">{group.label}</h3>
-        <p className="text-xs font-semibold text-slate-500">월 공수 {formatManDay(total)}</p>
-      </div>
-
-      <div className="overflow-x-auto rounded-lg border border-slate-200">
-        <table className="w-full min-w-[680px] text-xs tabular-nums">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="px-3 py-2 text-left font-bold text-slate-600">공종</th>
-              {group.days.map((d) => (
-                <th key={ymd(d)} className="px-2 py-2 text-center font-bold text-slate-500">
-                  {fmtKShort(d)}
-                </th>
-              ))}
-              <th className="px-3 py-2 text-right font-bold text-slate-700">합계</th>
-            </tr>
-          </thead>
-          <tbody>
-            {trades.map((trade) => (
-              <tr key={trade.id} className="border-b border-slate-100">
-                <td className="px-3 py-2 font-semibold">
-                  <span className="inline-flex items-center gap-1.5">
-                    <TradeDot color={trade.color} size="sm" />
-                    {trade.name}
-                  </span>
-                </td>
-                {group.days.map((d) => {
-                  const count = getCount(trade.id, d)
-                  return (
-                    <td key={ymd(d)} className={`px-2 py-2 text-center ${count > 0 ? 'font-semibold text-ink' : 'text-slate-300'}`}>
-                      {count > 0 ? formatManDay(count) : '-'}
-                    </td>
-                  )
-                })}
-                <td className="px-3 py-2 text-right font-bold text-blue-600">{formatManDay(tradeTotal(trade.id, group.days))}</td>
-              </tr>
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[760px] text-xs tabular-nums">
+        <thead>
+          <tr className="border-y border-slate-200 bg-slate-50">
+            <th className="px-3 py-2 text-left font-bold text-slate-600">공종</th>
+            {days.map((d) => (
+              <th key={ymd(d)} className="px-2 py-2 text-center font-semibold text-slate-500">
+                {fmtKShort(d)}
+              </th>
             ))}
-          </tbody>
-          <tfoot>
-            <tr className="bg-slate-50">
-              <td className="px-3 py-2 font-extrabold">합계</td>
-              {group.days.map((d) => {
-                const count = dayColTotal(d)
+            <th className="px-3 py-2 text-right font-bold text-blue-600">합계</th>
+          </tr>
+        </thead>
+        <tbody>
+          {trades.map((trade) => (
+            <tr key={trade.id} className="border-b border-slate-100">
+              <td className="px-3 py-2 font-semibold text-slate-700">{trade.name}</td>
+              {days.map((d) => {
+                const count = getCount(trade.id, d)
                 return (
-                  <td key={ymd(d)} className={`px-2 py-2 text-center font-bold ${count > 0 ? 'text-ink' : 'text-slate-300'}`}>
+                  <td key={ymd(d)} className={`px-2 py-2 text-center ${count > 0 ? 'text-ink' : 'text-slate-300'}`}>
                     {count > 0 ? formatManDay(count) : '-'}
                   </td>
                 )
               })}
-              <td className="px-3 py-2 text-right font-extrabold text-blue-600">{formatManDay(total)}</td>
+              <td className="px-3 py-2 text-right font-bold text-blue-600">{formatManDay(tradeTotal(trade.id, days))}</td>
             </tr>
-          </tfoot>
-        </table>
-      </div>
-    </section>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="bg-blue-50">
+            <td className="px-3 py-2 font-extrabold">합계</td>
+            {days.map((d) => {
+              const count = dayColTotal(d)
+              return (
+                <td key={ymd(d)} className={`px-2 py-2 text-center font-bold ${count > 0 ? 'text-blue-600' : 'text-slate-300'}`}>
+                  {count > 0 ? formatManDay(count) : '-'}
+                </td>
+              )
+            })}
+            <td className="px-3 py-2 text-right font-extrabold text-blue-600">{formatManDay(total)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
   )
 }
 
