@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { Download } from 'lucide-react'
-import { Button, Segmented, TradeDot } from '@/components/ui'
-import { ymd, addDays, fmtKShort, parseYmd, dayEntries } from '@/lib/utils'
+import { useMemo, useState } from 'react'
+import { Download, Eye, Printer } from 'lucide-react'
+import { Button, Segmented, Sheet, TradeDot, TextInput } from '@/components/ui'
+import { ymd, addDays, fmtKShort, parseYmd, startOfMonth, endOfMonth, dayEntries } from '@/lib/utils'
 import type { Site, Trade, Records } from '@/lib/types'
 
 interface Props {
@@ -12,68 +12,186 @@ interface Props {
   records: Records
 }
 
+type PeriodMode = 'all' | 'this-month' | 'last-month' | 'custom'
+
+interface MonthGroup {
+  key: string
+  label: string
+  days: Date[]
+}
+
 const PERIOD_OPTIONS = [
-  { value: '7',  label: '7일' },
-  { value: '14', label: '2주' },
-  { value: '30', label: '1개월' },
+  { value: 'all', label: '전체' },
+  { value: 'this-month', label: '이번 달' },
+  { value: 'last-month', label: '지난 달' },
+  { value: 'custom', label: '직접 선택' },
 ]
 
+const DAY_MS = 86_400_000
+
+function daysBetween(from: Date, to: Date) {
+  const length = Math.max(1, Math.floor((to.getTime() - from.getTime()) / DAY_MS) + 1)
+  return Array.from({ length }, (_, i) => addDays(from, i))
+}
+
+function monthLabel(d: Date) {
+  return `${d.getFullYear()}년 ${d.getMonth() + 1}월`
+}
+
+function clampDate(d: Date, min: Date, max: Date) {
+  if (d < min) return min
+  if (d > max) return max
+  return d
+}
+
+function formatManDay(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1)
+}
+
 export function TableTab({ site, trades, records }: Props) {
-  const [period, setPeriod] = useState('7')
+  const [periodMode, setPeriodMode] = useState<PeriodMode>('all')
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const days = Array.from({ length: Number(period) }, (_, i) =>
-    addDays(today, i - Number(period) + 1)
+
+  const siteDates = useMemo(
+    () =>
+      Object.keys(records)
+        .filter((key) => key.startsWith(`${site.id}|`))
+        .map((key) => key.split('|')[1])
+        .sort(),
+    [records, site.id],
   )
 
-  // Build matrix: trades × days
+  const dataFrom = siteDates.length > 0 ? parseYmd(siteDates[0]) : today
+  const dataTo = siteDates.length > 0 ? parseYmd(siteDates[siteDates.length - 1]) : today
+  const [customFrom, setCustomFrom] = useState(ymd(dataFrom))
+  const [customTo, setCustomTo] = useState(ymd(dataTo))
+
+  const days = useMemo(() => {
+    if (periodMode === 'this-month') {
+      return daysBetween(startOfMonth(today), clampDate(today, startOfMonth(today), endOfMonth(today)))
+    }
+
+    if (periodMode === 'last-month') {
+      const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+      return daysBetween(startOfMonth(lastMonth), endOfMonth(lastMonth))
+    }
+
+    if (periodMode === 'custom') {
+      const from = parseYmd(customFrom)
+      const to = parseYmd(customTo)
+      return from <= to ? daysBetween(from, to) : daysBetween(to, from)
+    }
+
+    return daysBetween(dataFrom, dataTo)
+  }, [customFrom, customTo, dataFrom, dataTo, periodMode])
+
   function getCount(tradeId: string, d: Date): number {
     return dayEntries(records, site.id, ymd(d))[tradeId]?.count ?? 0
   }
 
-  function tradeTotal(tradeId: string): number {
-    return days.reduce((s, d) => s + getCount(tradeId, d), 0)
+  function tradeTotal(tradeId: string, targetDays = days): number {
+    return targetDays.reduce((sum, day) => sum + getCount(tradeId, day), 0)
   }
 
   function dayColTotal(d: Date): number {
-    return trades.reduce((s, t) => s + getCount(t.id, d), 0)
+    return trades.reduce((sum, trade) => sum + getCount(trade.id, d), 0)
   }
 
-  const grandTotal = trades.reduce((s, t) => s + tradeTotal(t.id), 0)
+  function totalForDays(targetDays: Date[]): number {
+    return trades.reduce((sum, trade) => sum + tradeTotal(trade.id, targetDays), 0)
+  }
+
+  function activeTradesForDays(targetDays: Date[]) {
+    return trades.filter((trade) => tradeTotal(trade.id, targetDays) > 0)
+  }
+
+  const activeTrades = activeTradesForDays(days)
+  const grandTotal = totalForDays(days)
+  const fromLabel = fmtKShort(days[0])
+  const toLabel = fmtKShort(days[days.length - 1])
+  const monthGroups = useMemo<MonthGroup[]>(() => {
+    return days.reduce<MonthGroup[]>((groups, day) => {
+      const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}`
+      const last = groups[groups.length - 1]
+
+      if (last?.key === key) {
+        last.days.push(day)
+        return groups
+      }
+
+      groups.push({ key, label: monthLabel(day), days: [day] })
+      return groups
+    }, [])
+  }, [days])
 
   function downloadCsv() {
     const header = ['공종', ...days.map((d) => fmtKShort(d)), '합계'].join(',')
-    const rows = trades.map((t) =>
-      [t.name, ...days.map((d) => getCount(t.id, d)), tradeTotal(t.id)].join(',')
+    const rows = activeTrades.map((trade) =>
+      [trade.name, ...days.map((d) => getCount(trade.id, d)), formatManDay(tradeTotal(trade.id))].join(','),
     )
-    const footer = ['합계', ...days.map((d) => dayColTotal(d)), grandTotal].join(',')
+    const footer = ['합계', ...days.map((d) => formatManDay(dayColTotal(d))), formatManDay(grandTotal)].join(',')
     const csv = [header, ...rows, footer].join('\n')
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${site.name}_출근표.csv`
+    a.download = `${site.name}_출근기록.csv`
     a.click()
     URL.revokeObjectURL(url)
   }
 
+  function printReport() {
+    setPreviewOpen(false)
+    window.setTimeout(() => window.print(), 50)
+  }
+
+  const report = (
+    <ReportPreview
+      siteName={site.name}
+      period={`${fromLabel} - ${toLabel}`}
+      days={days}
+      monthGroups={monthGroups}
+      trades={activeTrades}
+      getCount={getCount}
+      tradeTotal={tradeTotal}
+      dayColTotal={dayColTotal}
+      totalForDays={totalForDays}
+      activeTradesForDays={activeTradesForDays}
+      grandTotal={grandTotal}
+    />
+  )
+
   return (
     <div className="max-w-[900px] mx-auto px-4 pb-8 pt-4">
-      <div className="flex items-center justify-between mb-4">
-        <Segmented
-          value={period}
-          onChange={setPeriod}
-          options={PERIOD_OPTIONS}
-        />
-        <Button
-          size="sm"
-          variant="outline"
-          icon={<Download size={14} />}
-          onClick={downloadCsv}
-        >
-          CSV
-        </Button>
+      <div className="mb-4 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+        <div className="flex flex-col gap-3 wide:flex-row wide:items-center wide:justify-between">
+          <div>
+            <p className="text-sm font-bold text-ink">출근기록 보고서</p>
+            <p className="mt-0.5 text-xs text-slate-500">기간을 고르면 표와 PDF 미리보기가 같이 바뀝니다.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" icon={<Eye size={14} />} onClick={() => setPreviewOpen(true)}>
+              미리보기
+            </Button>
+            <Button size="sm" variant="outline" icon={<Download size={14} />} onClick={downloadCsv}>
+              CSV
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-3 overflow-x-auto scrollbar-none">
+          <Segmented value={periodMode} onChange={(value) => setPeriodMode(value as PeriodMode)} options={PERIOD_OPTIONS} />
+        </div>
+
+        {periodMode === 'custom' && (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <TextInput type="date" value={customFrom} onChange={(event) => setCustomFrom(event.target.value)} />
+            <TextInput type="date" value={customTo} onChange={(event) => setCustomTo(event.target.value)} />
+          </div>
+        )}
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white scrollbar-none">
@@ -92,46 +210,194 @@ export function TableTab({ site, trades, records }: Props) {
             </tr>
           </thead>
           <tbody>
-            {trades.map((trade) => {
-              const total = tradeTotal(trade.id)
-              if (total === 0) return null
-              return (
-                <tr key={trade.id} className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="sticky left-0 bg-white px-3 py-2">
-                    <div className="flex items-center gap-1.5">
-                      <TradeDot color={trade.color} size="sm" />
-                      <span className="font-medium text-ink">{trade.name}</span>
-                    </div>
-                  </td>
-                  {days.map((d) => {
-                    const c = getCount(trade.id, d)
-                    return (
-                      <td key={ymd(d)} className={`px-2 py-2 text-center ${c > 0 ? 'text-ink font-semibold' : 'text-slate-200'}`}>
-                        {c > 0 ? c : '·'}
-                      </td>
-                    )
-                  })}
-                  <td className="px-3 py-2 text-right font-bold text-blue-600">{total}</td>
-                </tr>
-              )
-            })}
+            {activeTrades.map((trade) => (
+              <tr key={trade.id} className="border-b border-slate-100 hover:bg-slate-50">
+                <td className="sticky left-0 bg-white px-3 py-2">
+                  <div className="flex items-center gap-1.5">
+                    <TradeDot color={trade.color} size="sm" />
+                    <span className="font-medium text-ink">{trade.name}</span>
+                  </div>
+                </td>
+                {days.map((d) => {
+                  const count = getCount(trade.id, d)
+                  return (
+                    <td key={ymd(d)} className={`px-2 py-2 text-center ${count > 0 ? 'text-ink font-semibold' : 'text-slate-200'}`}>
+                      {count > 0 ? formatManDay(count) : '-'}
+                    </td>
+                  )
+                })}
+                <td className="px-3 py-2 text-right font-bold text-blue-600">{formatManDay(tradeTotal(trade.id))}</td>
+              </tr>
+            ))}
           </tbody>
           <tfoot>
             <tr className="bg-slate-50 border-t border-slate-200">
               <td className="sticky left-0 bg-slate-50 px-3 py-2 font-bold text-ink">합계</td>
               {days.map((d) => {
-                const c = dayColTotal(d)
+                const count = dayColTotal(d)
                 return (
-                  <td key={ymd(d)} className={`px-2 py-2 text-center font-bold ${c > 0 ? 'text-ink' : 'text-slate-200'}`}>
-                    {c > 0 ? c : '·'}
+                  <td key={ymd(d)} className={`px-2 py-2 text-center font-bold ${count > 0 ? 'text-ink' : 'text-slate-200'}`}>
+                    {count > 0 ? formatManDay(count) : '-'}
                   </td>
                 )
               })}
-              <td className="px-3 py-2 text-right font-extrabold text-blue-600">{grandTotal}</td>
+              <td className="px-3 py-2 text-right font-extrabold text-blue-600">{formatManDay(grandTotal)}</td>
             </tr>
           </tfoot>
         </table>
       </div>
+
+      <Sheet open={previewOpen} onClose={() => setPreviewOpen(false)} title="PDF 미리보기" maxWidth="920px">
+        {report}
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="outline" onClick={() => setPreviewOpen(false)}>
+            닫기
+          </Button>
+          <Button icon={<Printer size={15} />} onClick={printReport}>
+            PDF 저장
+          </Button>
+        </div>
+      </Sheet>
+
+      <div className="print-report">{report}</div>
     </div>
+  )
+}
+
+interface ReportPreviewProps {
+  siteName: string
+  period: string
+  days: Date[]
+  monthGroups: MonthGroup[]
+  trades: Trade[]
+  getCount: (tradeId: string, d: Date) => number
+  tradeTotal: (tradeId: string, targetDays?: Date[]) => number
+  dayColTotal: (d: Date) => number
+  totalForDays: (targetDays: Date[]) => number
+  activeTradesForDays: (targetDays: Date[]) => Trade[]
+  grandTotal: number
+}
+
+function ReportPreview({
+  siteName,
+  period,
+  days,
+  monthGroups,
+  trades,
+  getCount,
+  tradeTotal,
+  dayColTotal,
+  totalForDays,
+  activeTradesForDays,
+  grandTotal,
+}: ReportPreviewProps) {
+  return (
+    <section className="bg-white text-ink">
+      <div className="mb-5">
+        <p className="text-sm font-semibold text-blue-600">출근기록 보고서</p>
+        <h2 className="mt-1 text-2xl font-extrabold">{siteName}</h2>
+        <p className="mt-1 text-sm text-slate-500">기간 {period}</p>
+      </div>
+
+      <div className="mb-5 grid grid-cols-3 gap-2">
+        <SummaryBox label="기간" value={`${days.length}일`} />
+        <SummaryBox label="공종" value={`${trades.length}개`} />
+        <SummaryBox label="총 공수" value={`${formatManDay(grandTotal)}공수`} strong />
+      </div>
+
+      <div className="space-y-5">
+        {monthGroups.map((group) => (
+          <MonthReport
+            key={group.key}
+            group={group}
+            trades={activeTradesForDays(group.days)}
+            getCount={getCount}
+            tradeTotal={tradeTotal}
+            dayColTotal={dayColTotal}
+            total={totalForDays(group.days)}
+          />
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function SummaryBox({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className="rounded border border-slate-200 p-3">
+      <p className="text-xs text-slate-500">{label}</p>
+      <p className={`mt-1 text-lg font-bold ${strong ? 'text-blue-600' : 'text-ink'}`}>{value}</p>
+    </div>
+  )
+}
+
+interface MonthReportProps {
+  group: MonthGroup
+  trades: Trade[]
+  getCount: (tradeId: string, d: Date) => number
+  tradeTotal: (tradeId: string, targetDays?: Date[]) => number
+  dayColTotal: (d: Date) => number
+  total: number
+}
+
+function MonthReport({ group, trades, getCount, tradeTotal, dayColTotal, total }: MonthReportProps) {
+  return (
+    <section className="report-month">
+      <div className="mb-2 flex items-end justify-between">
+        <h3 className="text-base font-extrabold">{group.label}</h3>
+        <p className="text-xs font-semibold text-slate-500">월 공수 {formatManDay(total)}</p>
+      </div>
+
+      <div className="overflow-x-auto rounded-lg border border-slate-200">
+        <table className="w-full min-w-[680px] text-xs tabular-nums">
+          <thead>
+            <tr className="bg-slate-50 border-b border-slate-200">
+              <th className="px-3 py-2 text-left font-bold text-slate-600">공종</th>
+              {group.days.map((d) => (
+                <th key={ymd(d)} className="px-2 py-2 text-center font-bold text-slate-500">
+                  {fmtKShort(d)}
+                </th>
+              ))}
+              <th className="px-3 py-2 text-right font-bold text-slate-700">합계</th>
+            </tr>
+          </thead>
+          <tbody>
+            {trades.map((trade) => (
+              <tr key={trade.id} className="border-b border-slate-100">
+                <td className="px-3 py-2 font-semibold">
+                  <span className="inline-flex items-center gap-1.5">
+                    <TradeDot color={trade.color} size="sm" />
+                    {trade.name}
+                  </span>
+                </td>
+                {group.days.map((d) => {
+                  const count = getCount(trade.id, d)
+                  return (
+                    <td key={ymd(d)} className={`px-2 py-2 text-center ${count > 0 ? 'font-semibold text-ink' : 'text-slate-300'}`}>
+                      {count > 0 ? formatManDay(count) : '-'}
+                    </td>
+                  )
+                })}
+                <td className="px-3 py-2 text-right font-bold text-blue-600">{formatManDay(tradeTotal(trade.id, group.days))}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="bg-slate-50">
+              <td className="px-3 py-2 font-extrabold">합계</td>
+              {group.days.map((d) => {
+                const count = dayColTotal(d)
+                return (
+                  <td key={ymd(d)} className={`px-2 py-2 text-center font-bold ${count > 0 ? 'text-ink' : 'text-slate-300'}`}>
+                    {count > 0 ? formatManDay(count) : '-'}
+                  </td>
+                )
+              })}
+              <td className="px-3 py-2 text-right font-extrabold text-blue-600">{formatManDay(total)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
   )
 }
