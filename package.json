@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "build": "node scripts/next-dist.mjs build",
+    "start": "node scripts/next-dist.mjs start",
     "lint": "next lint"
   },
   "dependencies": {
