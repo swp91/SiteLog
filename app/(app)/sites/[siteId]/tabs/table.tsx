@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { Download, Eye, Printer } from 'lucide-react'
 import { Button, Segmented, Sheet, TradeDot, TextInput } from '@/components/ui'
 import { ymd, addDays, fmtKShort, parseYmd, startOfMonth, endOfMonth, dayEntries } from '@/lib/utils'
@@ -148,6 +148,15 @@ export function TableTab({ site, trades, records }: Props) {
     window.setTimeout(() => window.print(), 50)
   }
 
+  const summaryBoard = (
+    <MonthlySummaryBoard
+      groups={monthGroups}
+      activeTradesForDays={activeTradesForDays}
+      tradeTotal={tradeTotal}
+      totalForDays={totalForDays}
+    />
+  )
+
   const report = (
     <ReportPreview
       siteName={site.name}
@@ -161,6 +170,7 @@ export function TableTab({ site, trades, records }: Props) {
       totalForDays={totalForDays}
       activeTradesForDays={activeTradesForDays}
       grandTotal={grandTotal}
+      summaryBoard={summaryBoard}
     />
   )
 
@@ -247,6 +257,8 @@ export function TableTab({ site, trades, records }: Props) {
         </table>
       </div>
 
+      <div className="mt-4">{summaryBoard}</div>
+
       <Sheet open={previewOpen} onClose={() => setPreviewOpen(false)} title="PDF 미리보기" maxWidth="920px">
         {report}
         <div className="mt-4 flex justify-end gap-2">
@@ -276,6 +288,7 @@ interface ReportPreviewProps {
   totalForDays: (targetDays: Date[]) => number
   activeTradesForDays: (targetDays: Date[]) => Trade[]
   grandTotal: number
+  summaryBoard: ReactNode
 }
 
 function ReportPreview({
@@ -290,6 +303,7 @@ function ReportPreview({
   totalForDays,
   activeTradesForDays,
   grandTotal,
+  summaryBoard,
 }: ReportPreviewProps) {
   return (
     <section className="bg-white text-ink">
@@ -318,6 +332,8 @@ function ReportPreview({
           />
         ))}
       </div>
+
+      <div className="mt-5">{summaryBoard}</div>
     </section>
   )
 }
@@ -397,6 +413,53 @@ function MonthReport({ group, trades, getCount, tradeTotal, dayColTotal, total }
             </tr>
           </tfoot>
         </table>
+      </div>
+    </section>
+  )
+}
+
+interface MonthlySummaryBoardProps {
+  groups: MonthGroup[]
+  activeTradesForDays: (targetDays: Date[]) => Trade[]
+  tradeTotal: (tradeId: string, targetDays?: Date[]) => number
+  totalForDays: (targetDays: Date[]) => number
+}
+
+function MonthlySummaryBoard({ groups, activeTradesForDays, tradeTotal, totalForDays }: MonthlySummaryBoardProps) {
+  return (
+    <section>
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="text-sm font-extrabold text-ink">종합 상황판</h3>
+        <p className="text-xs text-slate-500">월별 공종 공수</p>
+      </div>
+
+      <div className="grid gap-3 wide:grid-cols-2">
+        {groups.map((group) => {
+          const monthTrades = activeTradesForDays(group.days)
+          const monthTotal = totalForDays(group.days)
+
+          return (
+            <article key={group.key} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-sm font-bold text-blue-600">{group.label}</p>
+              <p className="mt-1 text-3xl font-extrabold tracking-normal text-ink">
+                {formatManDay(monthTotal)}
+                <span className="ml-1 text-base font-bold">공수</span>
+              </p>
+
+              <div className="mt-4 space-y-2.5">
+                {monthTrades.map((trade) => (
+                  <div key={trade.id} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="inline-flex items-center gap-2 font-semibold text-slate-700">
+                      <TradeDot color={trade.color} size="sm" />
+                      {trade.name}
+                    </span>
+                    <span className="font-extrabold text-ink">{formatManDay(tradeTotal(trade.id, group.days))}공수</span>
+                  </div>
+                ))}
+              </div>
+            </article>
+          )
+        })}
       </div>
     </section>
   )
