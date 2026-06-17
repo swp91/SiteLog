@@ -342,9 +342,9 @@ function ReportPreview({
               return (
                 <div key={group.key} className="grid grid-cols-[90px_1fr_86px] items-center gap-3">
                   <p className="text-sm font-medium text-slate-600">{group.label}</p>
-                  <div className="h-5 overflow-hidden rounded-full bg-slate-100">
+                  <div className="relative h-5 overflow-hidden rounded-full border-t-[20px] border-slate-100">
                     <div
-                      className={`h-full rounded-full ${index === monthGroups.length - 1 ? 'bg-blue-600' : 'bg-slate-400'}`}
+                      className={`absolute left-0 top-[-20px] rounded-full border-t-[20px] ${index === monthGroups.length - 1 ? 'border-blue-600' : 'border-slate-400'}`}
                       style={{ width }}
                     />
                   </div>

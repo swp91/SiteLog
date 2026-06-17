@@ -84,6 +84,8 @@
     position: absolute;
     inset: 0;
     padding: 0;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 
   .report-month {
