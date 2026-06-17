@@ -306,8 +306,6 @@ function ReportPreview({
 }: ReportPreviewProps) {
   const cumulativeTrades = [...trades].sort((a, b) => tradeTotal(b.id) - tradeTotal(a.id))
   const maxMonthTotal = Math.max(...monthGroups.map((group) => totalForDays(group.days)), 1)
-  const detailGroup = monthGroups[monthGroups.length - 1]
-  const detailTrades = detailGroup ? activeTradesForDays(detailGroup.days) : []
 
   return (
     <section className="report-page rounded-xl bg-slate-50 p-6 text-ink">
@@ -372,22 +370,24 @@ function ReportPreview({
         </section>
       </div>
 
-      {detailGroup && (
-        <section className="rounded-xl border border-slate-200 bg-white p-5">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-lg font-extrabold">{detailGroup.label} 상세 출근 현황</h3>
-            <p className="text-sm font-semibold text-blue-600">월 공수 {formatManDay(totalForDays(detailGroup.days))}공수</p>
-          </div>
-          <AttendanceMatrix
-            days={detailGroup.days}
-            trades={detailTrades}
-            getCount={getCount}
-            tradeTotal={tradeTotal}
-            dayColTotal={dayColTotal}
-            total={totalForDays(detailGroup.days)}
-          />
-        </section>
-      )}
+      <div className="space-y-5">
+        {monthGroups.map((group) => (
+          <section key={group.key} className="report-month rounded-xl border border-slate-200 bg-white p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-lg font-extrabold">{group.label} 상세 출근 현황</h3>
+              <p className="text-sm font-semibold text-blue-600">월 공수 {formatManDay(totalForDays(group.days))}공수</p>
+            </div>
+            <AttendanceMatrix
+              days={group.days}
+              trades={activeTradesForDays(group.days)}
+              getCount={getCount}
+              tradeTotal={tradeTotal}
+              dayColTotal={dayColTotal}
+              total={totalForDays(group.days)}
+            />
+          </section>
+        ))}
+      </div>
 
       <p className="mt-4 text-xs text-slate-400">※ 공수는 작업 인원 x 작업일 기준으로 집계</p>
     </section>
