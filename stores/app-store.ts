@@ -32,6 +32,7 @@ interface AppState {
   workerSites: WorkerSite[]
   workerRecords: WorkerRecord[]
   toast: string
+  authInitialized: boolean
 
   // auth
   login: (email: string, pass: string) => Promise<void>
@@ -94,6 +95,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   workerSites: [],
   workerRecords: [],
   toast: '',
+  authInitialized: false,
 
   login: async (email, pass) => {
     await signInWithEmailAndPassword(auth, email, pass)
@@ -398,17 +400,43 @@ if (typeof window !== 'undefined') {
             company: data.company || '',
             joined: data.joined || '',
           }
+        } else {
+          // 데이터베이스 미생성 당시 꼬였던 불완전 가입 계정 자동 복구
+          const fallbackName = firebaseUser.email ? firebaseUser.email.split('@')[0] : '사용자'
+          userData = {
+            id: firebaseUser.uid,
+            org_id: firebaseUser.uid,
+            type: 'manager',
+            name: fallbackName,
+            role: '관리자',
+            email: firebaseUser.email || '',
+            avatar: fallbackName[0].toUpperCase(),
+            phone: '',
+            company: '',
+            joined: new Date().toISOString().slice(0, 7)
+          }
+          await setDoc(docRef, {
+            name: userData.name,
+            email: userData.email,
+            type: userData.type,
+            joined: userData.joined
+          })
         }
-        
-        useAppStore.setState({
-          authed: true,
-          user: userData
-        })
+
         
         // 데이터 실시간 로드 시작
         await useAppStore.getState().fetchData()
+
+        useAppStore.setState({
+          authed: true,
+          user: userData,
+          authInitialized: true
+        })
       } catch (e) {
         console.error('Error fetching user profile:', e)
+        useAppStore.setState({
+          authInitialized: true
+        })
       }
     } else {
       useAppStore.setState({
@@ -419,7 +447,8 @@ if (typeof window !== 'undefined') {
         records: {},
         journals: {},
         workerSites: [],
-        workerRecords: []
+        workerRecords: [],
+        authInitialized: true
       })
     }
   })

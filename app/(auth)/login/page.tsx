@@ -10,6 +10,7 @@ import Link from 'next/link'
 export default function LoginPage() {
   const router = useRouter()
   const authed = useAppStore((s) => s.authed)
+  const authInitialized = useAppStore((s) => s.authInitialized)
   const user = useAppStore((s) => s.user)
   const login = useAppStore((s) => s.login)
   
@@ -19,10 +20,18 @@ export default function LoginPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (authed && user.id) {
+    if (authInitialized && authed && user.id) {
       router.replace(user.type === 'worker' ? '/worker' : '/dashboard')
     }
-  }, [authed, user, router])
+  }, [authInitialized, authed, user, router])
+
+  if (!authInitialized) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin" />
+      </div>
+    )
+  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()

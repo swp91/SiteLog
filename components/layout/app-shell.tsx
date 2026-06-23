@@ -12,45 +12,30 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const toast = useAppStore((s) => s.toast)
   const authed = useAppStore((s) => s.authed)
-  const fetchData = useAppStore((s) => s.fetchData)
-  const [loading, setLoading] = useState(true)
+  const authInitialized = useAppStore((s) => s.authInitialized)
 
   useEffect(() => {
-    let active = true
+    if (!authInitialized) return
 
-    async function hydrateDemoSession() {
-      if (!authed) {
-        await fetchData()
+    if (!authed) {
+      router.replace('/login')
+    } else {
+      const state = useAppStore.getState()
+      if (state.user.type === 'worker' && !pathname.startsWith('/worker') && pathname !== '/settings') {
+        router.replace('/worker')
       }
-
-      if (!useAppStore.getState().authed) {
-        router.replace('/login')
-      } else {
-        const state = useAppStore.getState()
-        if (state.user.type === 'worker' && !pathname.startsWith('/worker') && pathname !== '/settings') {
-          router.replace('/worker')
-        }
-        if (state.user.type === 'manager' && pathname.startsWith('/worker')) {
-          router.replace('/dashboard')
-        }
+      if (state.user.type === 'manager' && pathname.startsWith('/worker')) {
+        router.replace('/dashboard')
       }
-
-      if (active) setLoading(false)
     }
+  }, [authInitialized, authed, pathname, router])
 
-    hydrateDemoSession()
-
-    return () => {
-      active = false
-    }
-  }, [authed, fetchData, pathname, router])
-
-  if (loading) {
+  if (!authInitialized) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin" />
-          <p className="text-[0.8125rem] text-slate-400">데모 데이터를 불러오는 중...</p>
+          <p className="text-[0.8125rem] text-slate-400">사용자 인증 정보를 확인하는 중...</p>
         </div>
       </div>
     )
