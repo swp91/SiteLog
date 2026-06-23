@@ -10,7 +10,8 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
-  onAuthStateChanged
+  onAuthStateChanged,
+  updateProfile as updateAuthProfile
 } from 'firebase/auth'
 import {
   doc,
@@ -104,6 +105,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   registerUser: async (email, pass, name) => {
     const credential = await createUserWithEmailAndPassword(auth, email, pass)
     const uid = credential.user.uid
+    // Auth profile displayName 동기화
+    await updateAuthProfile(credential.user, { displayName: name })
     // Firestore 사용자 문서 기본값 생성
     await setDoc(doc(db, 'users', uid), {
       name,
@@ -361,6 +364,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       phone: patch.phone || ''
     })
 
+    // Auth profile displayName 동기화
+    if (auth.currentUser) {
+      await updateAuthProfile(auth.currentUser, { displayName: patch.name })
+    }
+
     set((s) => ({
       user: {
         ...s.user,
@@ -402,7 +410,7 @@ if (typeof window !== 'undefined') {
           }
         } else {
           // 데이터베이스 미생성 당시 꼬였던 불완전 가입 계정 자동 복구
-          const fallbackName = firebaseUser.email ? firebaseUser.email.split('@')[0] : '사용자'
+          const fallbackName = firebaseUser.displayName || (firebaseUser.email ? firebaseUser.email.split('@')[0] : '사용자')
           userData = {
             id: firebaseUser.uid,
             org_id: firebaseUser.uid,
