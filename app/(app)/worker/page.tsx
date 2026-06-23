@@ -297,12 +297,13 @@ export default function WorkerPage() {
                   .filter((summary) => summary.manDay > 0)
                 const visibleSummaries = daySiteSummaries.slice(0, 2)
                 const hiddenSummaryCount = daySiteSummaries.length - visibleSummaries.length
+                const dayAmount = records.reduce((sum, record) => sum + record.manDay * record.rate, 0)
                 return (
                   <button
                     key={str}
                     onClick={() => setDate(str)}
                     className={cn(
-                      'min-h-[64px] rounded-sm p-1.5 text-left transition-colors hover:bg-slate-100',
+                      'min-h-[76px] rounded-sm p-1.5 text-left transition-colors hover:bg-slate-100',
                       day.getMonth() !== month.getMonth() && 'opacity-30',
                       date === str && 'bg-blue-50 ring-1 ring-blue-200',
                     )}
@@ -321,6 +322,11 @@ export default function WorkerPage() {
                         {hiddenSummaryCount > 0 && (
                           <span className="text-[0.625rem] font-bold text-slate-400">+{hiddenSummaryCount}</span>
                         )}
+                      </span>
+                    )}
+                    {dayAmount > 0 && (
+                      <span className="mt-1 block text-[0.625rem] font-extrabold text-blue-600 tabular-nums">
+                        {wonShort(dayAmount)}
                       </span>
                     )}
                   </button>
