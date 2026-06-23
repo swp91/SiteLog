@@ -287,19 +287,42 @@ export default function WorkerPage() {
               {days.map((day) => {
                 const str = ymd(day)
                 const records = monthRecords.filter((record) => record.date === str)
-                const dayManDay = records.reduce((sum, record) => sum + record.manDay, 0)
+                const daySiteSummaries = workerSites
+                  .map((site) => {
+                    const siteManDay = records
+                      .filter((record) => record.siteId === site.id)
+                      .reduce((sum, record) => sum + record.manDay, 0)
+                    return { site, manDay: siteManDay }
+                  })
+                  .filter((summary) => summary.manDay > 0)
+                const visibleSummaries = daySiteSummaries.slice(0, 2)
+                const hiddenSummaryCount = daySiteSummaries.length - visibleSummaries.length
                 return (
                   <button
                     key={str}
                     onClick={() => setDate(str)}
                     className={cn(
-                      'min-h-[52px] rounded-sm p-1.5 text-left transition-colors hover:bg-slate-100',
+                      'min-h-[64px] rounded-sm p-1.5 text-left transition-colors hover:bg-slate-100',
                       day.getMonth() !== month.getMonth() && 'opacity-30',
                       date === str && 'bg-blue-50 ring-1 ring-blue-200',
                     )}
                   >
                     <span className="block text-[0.75rem] font-bold text-ink">{day.getDate()}</span>
-                    {dayManDay > 0 && <span className="block text-[0.6875rem] text-blue-600 font-bold tabular-nums">{dayManDay}공수</span>}
+                    {visibleSummaries.length > 0 && (
+                      <span className="mt-1 flex flex-col gap-0.5">
+                        {visibleSummaries.map(({ site, manDay: siteManDay }) => (
+                          <span key={site.id} className="flex items-center gap-1 min-w-0">
+                            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: site.color }} />
+                            <span className="text-[0.625rem] font-bold text-slate-600 tabular-nums truncate">
+                              {siteManDay}공수
+                            </span>
+                          </span>
+                        ))}
+                        {hiddenSummaryCount > 0 && (
+                          <span className="text-[0.625rem] font-bold text-slate-400">+{hiddenSummaryCount}</span>
+                        )}
+                      </span>
+                    )}
                   </button>
                 )
               })}
