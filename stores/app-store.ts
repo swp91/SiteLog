@@ -2,7 +2,6 @@
 
 import { create } from 'zustand'
 import type { AppUser, Journal, Journals, Records, Site, Trade, UserType, WorkerRecord, WorkerSite, DayRecord } from '@/lib/types'
-import { cloneDemoData } from '@/lib/mock-data'
 import { withEntry } from '@/lib/utils'
 import { auth, db } from '@/lib/firebase'
 import {
