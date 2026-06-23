@@ -107,8 +107,8 @@ export default function SettingsPage() {
             <RefreshCcw size={18} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[0.9375rem] font-bold text-ink">데모 역할 전환</p>
-            <p className="text-xs text-slate-400 mt-0.5">관리자 화면과 노동자 장부를 바로 오가며 확인합니다.</p>
+            <p className="text-[0.9375rem] font-bold text-ink">모드 전환</p>
+            <p className="text-xs text-slate-400 mt-0.5">관리자 화면과 노동자 장부를 전환하여 확인합니다.</p>
           </div>
         </div>
         <Button full variant="secondary" className="mt-4" icon={<RefreshCcw size={15} />} onClick={handleSwitchType}>
