@@ -1,16 +1,18 @@
-import * as admin from 'firebase-admin'
+import { initializeApp, getApps, cert } from 'firebase-admin/app'
+import { getAuth } from 'firebase-admin/auth'
+import { getFirestore } from 'firebase-admin/firestore'
 
-if (!admin.apps.length) {
-  const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID
-  const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL
-  // 환경변수에 저장된 \n 문자열을 실제 줄바꿈 문자로 치환합니다.
-  const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY
-    ? process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, '\n')
-    : undefined
+const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID
+const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL
+// 환경변수에 저장된 \n 문자열을 실제 줄바꿈 문자로 치환합니다.
+const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY
+  ? process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, '\n')
+  : undefined
 
+if (getApps().length === 0) {
   if (projectId && clientEmail && privateKey && clientEmail !== 'YOUR_FIREBASE_ADMIN_CLIENT_EMAIL') {
-    admin.initializeApp({
-      credential: admin.credential.cert({
+    initializeApp({
+      credential: cert({
         projectId,
         clientEmail,
         privateKey,
@@ -24,5 +26,6 @@ if (!admin.apps.length) {
   }
 }
 
-export const adminAuth = admin.auth()
-export const adminDb = admin.firestore()
+export const adminAuth = getAuth()
+export const adminDb = getFirestore()
+
