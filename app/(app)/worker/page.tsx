@@ -15,6 +15,7 @@ const SITE_COLORS = ['#2563EB', '#14B8A6', '#F59E0B', '#EC4899', '#8B5CF6', '#22
 
 type WorkerTab = 'entry' | 'calendar' | 'sites'
 type SettlementMode = 'month' | 'year'
+type ReportMode = 'full' | 'simple'
 
 export default function WorkerPage() {
   const {
@@ -40,6 +41,7 @@ export default function WorkerPage() {
   const [newSiteName, setNewSiteName] = useState('')
   const [newSiteRate, setNewSiteRate] = useState('')
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [reportMode, setReportMode] = useState<ReportMode>('full')
 
   useEffect(() => {
     if (!siteId && workerSites[0]) {
@@ -182,6 +184,7 @@ export default function WorkerPage() {
       siteSummaries={siteSummaries}
       totals={settlementTotals}
       recordSiteName={recordSiteName}
+      includePaymentStatus={reportMode === 'full'}
     />
   )
 
@@ -562,6 +565,17 @@ export default function WorkerPage() {
       )}
 
       <Sheet open={previewOpen} onClose={() => setPreviewOpen(false)} title="정산 PDF 미리보기" maxWidth="960px">
+        <div className="mb-4">
+          <Segmented
+            full
+            value={reportMode}
+            onChange={(value) => setReportMode(value as ReportMode)}
+            options={[
+              { value: 'full', label: '상세 출력' },
+              { value: 'simple', label: '간단 출력' },
+            ]}
+          />
+        </div>
         {settlementReport}
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="outline" onClick={() => setPreviewOpen(false)}>
@@ -597,6 +611,7 @@ interface WorkerSettlementReportProps {
     unpaid: number
   }
   recordSiteName: (siteId: string) => string
+  includePaymentStatus: boolean
 }
 
 function WorkerSettlementReport({
@@ -607,6 +622,7 @@ function WorkerSettlementReport({
   siteSummaries,
   totals,
   recordSiteName,
+  includePaymentStatus,
 }: WorkerSettlementReportProps) {
   return (
     <div className="mx-auto max-w-[1040px] bg-white p-6 text-ink">
@@ -619,7 +635,10 @@ function WorkerSettlementReport({
         <p className="text-xs text-slate-400">출력일 {ymd(new Date())}</p>
       </div>
 
-      <div className="mb-6 grid grid-cols-4 divide-x divide-slate-100 rounded-lg border border-slate-200 bg-slate-50 py-4">
+      <div className={cn(
+        'mb-6 grid divide-x divide-slate-100 rounded-lg border border-slate-200 bg-slate-50 py-4',
+        includePaymentStatus ? 'grid-cols-4' : 'grid-cols-2',
+      )}>
         <div className="text-center">
           <p className="text-xs text-slate-400">공수</p>
           <p className="mt-1 text-xl font-extrabold tabular-nums">{totals.manDay}</p>
@@ -628,14 +647,18 @@ function WorkerSettlementReport({
           <p className="text-xs text-slate-400">합산 금액</p>
           <p className="mt-1 text-xl font-extrabold text-blue-600 tabular-nums">{wonFmt(totals.amount)}원</p>
         </div>
-        <div className="text-center">
-          <p className="text-xs text-slate-400">지급 합산</p>
-          <p className="mt-1 text-xl font-extrabold text-emerald-600 tabular-nums">{wonFmt(totals.paid)}원</p>
-        </div>
-        <div className="text-center">
-          <p className="text-xs text-slate-400">미지급 합산</p>
-          <p className="mt-1 text-xl font-extrabold text-amber-600 tabular-nums">{wonFmt(totals.unpaid)}원</p>
-        </div>
+        {includePaymentStatus && (
+          <>
+            <div className="text-center">
+              <p className="text-xs text-slate-400">지급 합산</p>
+              <p className="mt-1 text-xl font-extrabold text-emerald-600 tabular-nums">{wonFmt(totals.paid)}원</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-slate-400">미지급 합산</p>
+              <p className="mt-1 text-xl font-extrabold text-amber-600 tabular-nums">{wonFmt(totals.unpaid)}원</p>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="mb-6">
@@ -646,8 +669,12 @@ function WorkerSettlementReport({
               <th className="px-3 py-2">현장</th>
               <th className="px-3 py-2 text-right">공수</th>
               <th className="px-3 py-2 text-right">합계</th>
-              <th className="px-3 py-2 text-right">지급</th>
-              <th className="px-3 py-2 text-right">미지급</th>
+              {includePaymentStatus && (
+                <>
+                  <th className="px-3 py-2 text-right">지급</th>
+                  <th className="px-3 py-2 text-right">미지급</th>
+                </>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -661,13 +688,17 @@ function WorkerSettlementReport({
                 </td>
                 <td className="px-3 py-2 text-right">{manDay}</td>
                 <td className="px-3 py-2 text-right font-bold text-blue-600">{wonFmt(amount)}원</td>
-                <td className="px-3 py-2 text-right text-emerald-600">{wonFmt(paid)}원</td>
-                <td className="px-3 py-2 text-right text-amber-600">{wonFmt(unpaid)}원</td>
+                {includePaymentStatus && (
+                  <>
+                    <td className="px-3 py-2 text-right text-emerald-600">{wonFmt(paid)}원</td>
+                    <td className="px-3 py-2 text-right text-amber-600">{wonFmt(unpaid)}원</td>
+                  </>
+                )}
               </tr>
             ))}
             {siteSummaries.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-3 py-8 text-center text-slate-400">정산할 기록이 없습니다.</td>
+                <td colSpan={includePaymentStatus ? 5 : 3} className="px-3 py-8 text-center text-slate-400">정산할 기록이 없습니다.</td>
               </tr>
             )}
           </tbody>
@@ -684,7 +715,7 @@ function WorkerSettlementReport({
               <th className="px-3 py-2 text-right">공수</th>
               <th className="px-3 py-2 text-right">일당</th>
               <th className="px-3 py-2 text-right">금액</th>
-              <th className="px-3 py-2 text-center">상태</th>
+              {includePaymentStatus && <th className="px-3 py-2 text-center">상태</th>}
             </tr>
           </thead>
           <tbody>
@@ -703,13 +734,15 @@ function WorkerSettlementReport({
                   <td className="px-3 py-2 text-right">{record.manDay}</td>
                   <td className="px-3 py-2 text-right">{wonFmt(record.rate)}원</td>
                   <td className="px-3 py-2 text-right font-bold">{wonFmt(amount)}원</td>
-                  <td className="px-3 py-2 text-center">{record.paymentStatus === 'paid' ? '지급완료' : '미지급'}</td>
+                  {includePaymentStatus && (
+                    <td className="px-3 py-2 text-center">{record.paymentStatus === 'paid' ? '지급완료' : '미지급'}</td>
+                  )}
                 </tr>
               )
             })}
             {records.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-3 py-8 text-center text-slate-400">기록이 없습니다.</td>
+                <td colSpan={includePaymentStatus ? 6 : 5} className="px-3 py-8 text-center text-slate-400">기록이 없습니다.</td>
               </tr>
             )}
           </tbody>
