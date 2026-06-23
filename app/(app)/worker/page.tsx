@@ -11,7 +11,7 @@ import type { PaymentStatus } from '@/lib/types'
 const TODAY = new Date()
 TODAY.setHours(0, 0, 0, 0)
 
-const SITE_COLORS = ['#2563EB', '#14B8A6', '#F59E0B', '#EC4899', '#8B5CF6', '#64748B']
+const SITE_COLORS = ['#2563EB', '#14B8A6', '#F59E0B', '#EC4899', '#8B5CF6', '#22C55E', '#EF4444', '#0EA5E9', '#A855F7', '#64748B']
 
 type WorkerTab = 'entry' | 'calendar' | 'sites'
 type SettlementMode = 'month' | 'year'
