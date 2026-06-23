@@ -1,12 +1,12 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Printer, Plus, Trash2 } from 'lucide-react'
 import { useAppStore } from '@/stores/app-store'
 import { TopBar } from '@/components/layout/top-bar'
-import { Button, Card, Field, Segmented, Stepper, TextInput, TradeDot } from '@/components/ui'
+import { Button, Card, Field, Segmented, Sheet, Stepper, TextInput, TradeDot } from '@/components/ui'
 import { addDays, cn, endOfMonth, fmtKShort, parseYmd, startOfMonth, wonFmt, wonShort, ymd } from '@/lib/utils'
-import type { PaymentStatus } from '@/lib/types'
+import type { PaymentStatus, WorkerRecord, WorkerSite } from '@/lib/types'
 
 const TODAY = new Date()
 TODAY.setHours(0, 0, 0, 0)
@@ -39,6 +39,7 @@ export default function WorkerPage() {
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('unpaid')
   const [newSiteName, setNewSiteName] = useState('')
   const [newSiteRate, setNewSiteRate] = useState('')
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   useEffect(() => {
     if (!siteId && workerSites[0]) {
@@ -156,6 +157,33 @@ export default function WorkerPage() {
   function recordSiteName(siteId: string) {
     return workerSites.find((item) => item.id === siteId)?.name ?? '삭제된 현장'
   }
+
+  function printSettlementReport() {
+    setPreviewOpen(false)
+    const prevTitle = document.title
+    document.title = ' '
+    window.setTimeout(() => {
+      window.print()
+      window.setTimeout(() => {
+        document.title = prevTitle
+      }, 300)
+    }, 50)
+  }
+
+  const settlementPeriodLabel = settlementMode === 'year'
+    ? `${month.getFullYear()}년`
+    : `${month.getFullYear()}년 ${month.getMonth() + 1}월`
+  const settlementReport = (
+    <WorkerSettlementReport
+      periodLabel={settlementPeriodLabel}
+      modeLabel={settlementMode === 'year' ? '연간 정산' : '월간 정산'}
+      records={settlementRecords}
+      sites={workerSites}
+      siteSummaries={siteSummaries}
+      totals={settlementTotals}
+      recordSiteName={recordSiteName}
+    />
+  )
 
   return (
     <div className="max-w-[920px] mx-auto px-4 pb-8">
@@ -278,15 +306,21 @@ export default function WorkerPage() {
 
       {activeTab === 'calendar' && (
         <div className="flex flex-col gap-4">
-          <Segmented
-            full
-            value={settlementMode}
-            onChange={(value) => setSettlementMode(value as SettlementMode)}
-            options={[
-              { value: 'month', label: '월간 정산' },
-              { value: 'year', label: '연간 정산' },
-            ]}
-          />
+          <div className="flex flex-col gap-2 wide:flex-row wide:items-center">
+            <Segmented
+              full
+              className="wide:flex-1"
+              value={settlementMode}
+              onChange={(value) => setSettlementMode(value as SettlementMode)}
+              options={[
+                { value: 'month', label: '월간 정산' },
+                { value: 'year', label: '연간 정산' },
+              ]}
+            />
+            <Button variant="outline" icon={<Printer size={15} />} onClick={() => setPreviewOpen(true)}>
+              PDF 내보내기
+            </Button>
+          </div>
 
           <Card>
             <div className="flex items-center justify-between mb-4">
@@ -526,6 +560,161 @@ export default function WorkerPage() {
           </div>
         </div>
       )}
+
+      <Sheet open={previewOpen} onClose={() => setPreviewOpen(false)} title="정산 PDF 미리보기" maxWidth="960px">
+        {settlementReport}
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="outline" onClick={() => setPreviewOpen(false)}>
+            닫기
+          </Button>
+          <Button icon={<Printer size={15} />} onClick={printSettlementReport}>
+            PDF 저장
+          </Button>
+        </div>
+      </Sheet>
+
+      <div className="print-report">{settlementReport}</div>
+    </div>
+  )
+}
+
+interface WorkerSettlementReportProps {
+  periodLabel: string
+  modeLabel: string
+  records: WorkerRecord[]
+  sites: WorkerSite[]
+  siteSummaries: Array<{
+    site: WorkerSite
+    manDay: number
+    amount: number
+    paid: number
+    unpaid: number
+  }>
+  totals: {
+    manDay: number
+    amount: number
+    paid: number
+    unpaid: number
+  }
+  recordSiteName: (siteId: string) => string
+}
+
+function WorkerSettlementReport({
+  periodLabel,
+  modeLabel,
+  records,
+  sites,
+  siteSummaries,
+  totals,
+  recordSiteName,
+}: WorkerSettlementReportProps) {
+  return (
+    <div className="mx-auto max-w-[1040px] bg-white p-6 text-ink">
+      <div className="mb-6 flex items-start justify-between border-b border-slate-200 pb-4">
+        <div>
+          <p className="text-xs font-bold text-blue-600">SiteLog</p>
+          <h2 className="mt-1 text-2xl font-extrabold text-ink">노동자 정산 보고서</h2>
+          <p className="mt-1 text-sm text-slate-500">{modeLabel} · {periodLabel}</p>
+        </div>
+        <p className="text-xs text-slate-400">출력일 {ymd(new Date())}</p>
+      </div>
+
+      <div className="mb-6 grid grid-cols-4 divide-x divide-slate-100 rounded-lg border border-slate-200 bg-slate-50 py-4">
+        <div className="text-center">
+          <p className="text-xs text-slate-400">공수</p>
+          <p className="mt-1 text-xl font-extrabold tabular-nums">{totals.manDay}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-xs text-slate-400">합산 금액</p>
+          <p className="mt-1 text-xl font-extrabold text-blue-600 tabular-nums">{wonFmt(totals.amount)}원</p>
+        </div>
+        <div className="text-center">
+          <p className="text-xs text-slate-400">지급 합산</p>
+          <p className="mt-1 text-xl font-extrabold text-emerald-600 tabular-nums">{wonFmt(totals.paid)}원</p>
+        </div>
+        <div className="text-center">
+          <p className="text-xs text-slate-400">미지급 합산</p>
+          <p className="mt-1 text-xl font-extrabold text-amber-600 tabular-nums">{wonFmt(totals.unpaid)}원</p>
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <h3 className="mb-2 text-sm font-bold text-ink">현장별 정산</h3>
+        <table className="w-full border-collapse text-sm tabular-nums">
+          <thead>
+            <tr className="border-y border-slate-200 bg-slate-50 text-left text-xs text-slate-500">
+              <th className="px-3 py-2">현장</th>
+              <th className="px-3 py-2 text-right">공수</th>
+              <th className="px-3 py-2 text-right">합계</th>
+              <th className="px-3 py-2 text-right">지급</th>
+              <th className="px-3 py-2 text-right">미지급</th>
+            </tr>
+          </thead>
+          <tbody>
+            {siteSummaries.map(({ site, manDay, amount, paid, unpaid }) => (
+              <tr key={site.id} className="border-b border-slate-100">
+                <td className="px-3 py-2">
+                  <span className="inline-flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: site.color }} />
+                    <span className="font-semibold">{site.name}</span>
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-right">{manDay}</td>
+                <td className="px-3 py-2 text-right font-bold text-blue-600">{wonFmt(amount)}원</td>
+                <td className="px-3 py-2 text-right text-emerald-600">{wonFmt(paid)}원</td>
+                <td className="px-3 py-2 text-right text-amber-600">{wonFmt(unpaid)}원</td>
+              </tr>
+            ))}
+            {siteSummaries.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-3 py-8 text-center text-slate-400">정산할 기록이 없습니다.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div>
+        <h3 className="mb-2 text-sm font-bold text-ink">기록 상세</h3>
+        <table className="w-full border-collapse text-sm tabular-nums">
+          <thead>
+            <tr className="border-y border-slate-200 bg-slate-50 text-left text-xs text-slate-500">
+              <th className="px-3 py-2">날짜</th>
+              <th className="px-3 py-2">현장</th>
+              <th className="px-3 py-2 text-right">공수</th>
+              <th className="px-3 py-2 text-right">일당</th>
+              <th className="px-3 py-2 text-right">금액</th>
+              <th className="px-3 py-2 text-center">상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...records].sort((a, b) => a.date.localeCompare(b.date)).map((record) => {
+              const site = sites.find((item) => item.id === record.siteId)
+              const amount = record.manDay * record.rate
+              return (
+                <tr key={record.id} className="border-b border-slate-100">
+                  <td className="px-3 py-2">{record.date}</td>
+                  <td className="px-3 py-2">
+                    <span className="inline-flex items-center gap-2">
+                      {site && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: site.color }} />}
+                      <span className="font-semibold">{recordSiteName(record.siteId)}</span>
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-right">{record.manDay}</td>
+                  <td className="px-3 py-2 text-right">{wonFmt(record.rate)}원</td>
+                  <td className="px-3 py-2 text-right font-bold">{wonFmt(amount)}원</td>
+                  <td className="px-3 py-2 text-center">{record.paymentStatus === 'paid' ? '지급완료' : '미지급'}</td>
+                </tr>
+              )
+            })}
+            {records.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-3 py-8 text-center text-slate-400">기록이 없습니다.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
