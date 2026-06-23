@@ -1,0 +1,18 @@
+{
+  "name": "SiteLog - 현장출근기록",
+  "short_name": "SiteLog",
+  "description": "인테리어 공사 현장의 일별 출근 현황을 기록·조회하는 모바일 우선 웹앱",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#2563EB",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/Sitelog-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -136,6 +136,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   logout: async () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('sitelog_user_hint')
+    }
     await signOut(auth)
   },
 
@@ -437,6 +440,10 @@ if (typeof window !== 'undefined') {
           user: userData
         })
         
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('sitelog_user_hint', JSON.stringify(userData))
+        }
+        
         // 2. 데이터 실시간 로드를 수행합니다 (get().user.id가 존재하게 됨).
         await useAppStore.getState().fetchData()
 
@@ -451,6 +458,9 @@ if (typeof window !== 'undefined') {
         })
       }
     } else {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('sitelog_user_hint')
+      }
       useAppStore.setState({
         authed: false,
         user: EMPTY_USER,

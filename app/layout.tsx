@@ -2,11 +2,29 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: '현장출근기록',
-  description: '인테리어 공사 현장 출근 관리',
+  metadataBase: new URL(
+    process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : 'http://localhost:3000'
+  ),
+  title: 'SiteLog - 현장출근기록',
+  description: '인테리어 공사 현장의 일별 출근 현황을 기록·조회하는 모바일 우선 웹앱',
   manifest: '/manifest.json',
   icons: {
     icon: '/Sitelog-logo.svg',
+    apple: '/Sitelog-logo.svg',
+  },
+  openGraph: {
+    type: 'website',
+    title: 'SiteLog - 현장출근기록',
+    description: '인테리어 공사 현장의 일별 출근 현황을 기록·조회하는 모바일 우선 웹앱',
+    images: [{ url: '/Sitelog-logo.svg' }],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'SiteLog - 현장출근기록',
+    description: '인테리어 공사 현장의 일별 출근 현황을 기록·조회하는 모바일 우선 웹앱',
+    images: ['/Sitelog-logo.svg'],
   },
 }
 
