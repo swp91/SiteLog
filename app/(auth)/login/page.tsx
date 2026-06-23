@@ -33,6 +33,17 @@ export default function LoginPage() {
     )
   }
 
+  const handleKakaoLogin = () => {
+    const clientId = process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID
+    const redirectUri = process.env.NEXT_PUBLIC_KAKAO_REDIRECT_URI
+    if (!clientId || !redirectUri) {
+      setError('카카오 환경 설정이 완료되지 않았습니다.')
+      return
+    }
+    const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`
+    window.location.href = kakaoAuthUrl
+  }
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     if (!email.trim() || !password) {
@@ -108,6 +119,28 @@ export default function LoginPage() {
               {loading ? '로그인 중...' : '로그인'}
             </Button>
           </form>
+
+          <div className="relative flex py-3 items-center">
+            <div className="flex-grow border-t border-slate-100"></div>
+            <span className="flex-shrink mx-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">간편 로그인</span>
+            <div className="flex-grow border-t border-slate-100"></div>
+          </div>
+
+          <Button
+            type="button"
+            variant="kakao"
+            full
+            size="lg"
+            disabled={loading}
+            onClick={handleKakaoLogin}
+            icon={
+              <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.558 1.707 4.8 4.27 6.054-.188.702-.68 2.531-.777 2.87-.12.422.147.416.308.308.127-.085 2.012-1.366 2.818-1.912.437.121.895.187 1.381.187 4.97 0 9-3.185 9-7.115S16.97 3 12 3z" />
+              </svg>
+            }
+          >
+            카카오로 시작하기
+          </Button>
 
           <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <Link href="/register" className="hover:text-blue-600 font-medium">
