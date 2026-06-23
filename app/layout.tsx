@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: '현장출근기록',
   description: '인테리어 공사 현장 출근 관리',
   manifest: '/manifest.json',
+  icons: {
+    icon: '/Sitelog-logo.svg',
+  },
 }
 
 export const viewport: Viewport = {
