@@ -8,6 +8,7 @@ interface StepperProps {
   onChange: (v: number) => void
   min?: number
   max?: number
+  step?: number
   size?: 'sm' | 'md' | 'lg'
   className?: string
 }
@@ -18,12 +19,12 @@ const sizeCls = {
   lg: { btn: 'w-11 h-11', text: 'w-12 text-xl', icon: 18 },
 }
 
-export function Stepper({ value, onChange, min = 0, max = 99, size = 'md', className }: StepperProps) {
+export function Stepper({ value, onChange, min = 0, max = 99, step = 1, size = 'md', className }: StepperProps) {
   const cls = sizeCls[size]
   return (
     <div className={cn('inline-flex items-center gap-1', className)}>
       <button
-        onClick={() => onChange(Math.max(min, value - 1))}
+        onClick={() => onChange(Math.max(min, value - step))}
         disabled={value <= min}
         className={cn(
           'flex items-center justify-center rounded-sm border border-slate-200 bg-white',
@@ -38,7 +39,7 @@ export function Stepper({ value, onChange, min = 0, max = 99, size = 'md', class
         {value}
       </span>
       <button
-        onClick={() => onChange(Math.min(max, value + 1))}
+        onClick={() => onChange(Math.min(max, value + step))}
         disabled={value >= max}
         className={cn(
           'flex items-center justify-center rounded-sm border border-slate-200 bg-white',

@@ -2,14 +2,14 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { LogOut, Bell, ChevronRight } from 'lucide-react'
+import { LogOut, Bell, ChevronRight, RefreshCcw } from 'lucide-react'
 import { useAppStore } from '@/stores/app-store'
 import { TopBar } from '@/components/layout/top-bar'
-import { Card, Avatar, Button, Sheet, TextInput, Field } from '@/components/ui'
+import { Card, Avatar, Badge, Button, Sheet, TextInput, Field } from '@/components/ui'
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { user, sites, records, logout, updateProfile, flash } = useAppStore()
+  const { user, sites, records, logout, updateProfile, switchUserType, flash } = useAppStore()
 
   const [alerts, setAlerts] = useState({
     missing: true,
@@ -24,10 +24,18 @@ export default function SettingsPage() {
 
   const totalEntries = Object.keys(records).length
   const activeSiteCount = sites.filter((s) => s.status !== '완료').length
+  const nextType = user.type === 'worker' ? 'manager' : 'worker'
+  const nextLabel = user.type === 'worker' ? '관리자 모드로 전환' : '노동자 모드로 전환'
 
   async function handleLogout() {
     await logout()
     router.push('/login')
+  }
+
+  function handleSwitchType() {
+    switchUserType(nextType)
+    flash(nextLabel)
+    router.push(nextType === 'worker' ? '/worker' : '/dashboard')
   }
 
   function handleOpenEdit() {
@@ -66,7 +74,10 @@ export default function SettingsPage() {
         <div className="flex items-center gap-4 mb-4">
           <Avatar name={user.avatar} size="xl" />
           <div className="flex-1 min-w-0">
-            <p className="text-lg font-bold text-ink">{user.name}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-lg font-bold text-ink">{user.name}</p>
+              <Badge tone={user.type === 'worker' ? 'amber' : 'blue'}>{user.type === 'worker' ? '노동자' : '관리자'}</Badge>
+            </div>
             <p className="text-[0.8125rem] text-slate-500">{user.role}</p>
             {user.company && <p className="text-xs text-slate-400">{user.company}</p>}
           </div>
@@ -88,6 +99,21 @@ export default function SettingsPage() {
             </div>
           )}
         </div>
+      </Card>
+
+      <Card className="mb-5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+            <RefreshCcw size={18} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[0.9375rem] font-bold text-ink">데모 역할 전환</p>
+            <p className="text-xs text-slate-400 mt-0.5">관리자 화면과 노동자 장부를 바로 오가며 확인합니다.</p>
+          </div>
+        </div>
+        <Button full variant="secondary" className="mt-4" icon={<RefreshCcw size={15} />} onClick={handleSwitchType}>
+          {nextLabel}
+        </Button>
       </Card>
 
       {/* Account */}

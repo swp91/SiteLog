@@ -4,14 +4,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react'
 import { useAppStore } from '@/stores/app-store'
 import { TopBar } from '@/components/layout/top-bar'
-import { Button, Card, Field, Segmented, TextInput, TradeDot } from '@/components/ui'
+import { Button, Card, Field, Segmented, Stepper, TextInput, TradeDot } from '@/components/ui'
 import { addDays, cn, endOfMonth, fmtKShort, parseYmd, startOfMonth, wonFmt, wonShort, ymd } from '@/lib/utils'
 import type { PaymentStatus } from '@/lib/types'
 
 const TODAY = new Date()
 TODAY.setHours(0, 0, 0, 0)
 
-const MAN_DAY_OPTIONS = [0.5, 1, 1.5, 2]
 const SITE_COLORS = ['#2563EB', '#14B8A6', '#F59E0B', '#EC4899', '#8B5CF6', '#64748B']
 
 type WorkerTab = 'entry' | 'calendar' | 'sites'
@@ -28,7 +27,7 @@ export default function WorkerPage() {
     flash,
   } = useAppStore()
 
-  const [activeTab, setActiveTab] = useState<WorkerTab>('entry')
+  const [activeTab, setActiveTab] = useState<WorkerTab>('sites')
   const [month, setMonth] = useState(() => new Date(TODAY.getFullYear(), TODAY.getMonth(), 1))
   const [date, setDate] = useState(ymd(TODAY))
   const [siteId, setSiteId] = useState('')
@@ -95,6 +94,11 @@ export default function WorkerPage() {
     setRate(site?.defaultRate ?? 0)
   }
 
+  function selectSiteForEntry(nextSiteId: string) {
+    handleSiteChange(nextSiteId)
+    setActiveTab('entry')
+  }
+
   async function saveRecord() {
     if (!siteId || rate <= 0 || manDay <= 0) return
 
@@ -111,8 +115,8 @@ export default function WorkerPage() {
   }
 
   async function saveSite() {
-    const defaultRate = Number(newSiteRate)
-    if (!newSiteName.trim() || defaultRate <= 0) return
+    const defaultRate = Math.max(0, Number(newSiteRate) || 0)
+    if (!newSiteName.trim()) return
 
     await addWorkerSite({
       name: newSiteName.trim(),
@@ -143,25 +147,8 @@ export default function WorkerPage() {
 
       <div className="pt-6 pb-4">
         <p className="text-sm text-slate-500">개인 공수 장부</p>
-        <h1 className="text-2xl font-bold text-ink">오늘 기록부터 빠르게 입력하세요</h1>
+        <h1 className="text-2xl font-bold text-ink">{activeTab === 'sites' ? '현장을 먼저 선택하세요' : '오늘 기록부터 빠르게 입력하세요'}</h1>
       </div>
-
-      <Card className="mb-4">
-        <div className="grid grid-cols-3 divide-x divide-slate-100">
-          <div className="text-center">
-            <p className="text-[0.6875rem] text-slate-400 mb-1">이번 달 공수</p>
-            <p className="text-xl font-extrabold text-ink tabular-nums">{totals.manDay}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-[0.6875rem] text-slate-400 mb-1">예상 금액</p>
-            <p className="text-xl font-extrabold text-blue-600 tabular-nums">{wonShort(totals.amount)}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-[0.6875rem] text-slate-400 mb-1">미지급</p>
-            <p className="text-xl font-extrabold text-amber-600 tabular-nums">{wonShort(totals.unpaid)}</p>
-          </div>
-        </div>
-      </Card>
 
       <Segmented
         full
@@ -169,11 +156,30 @@ export default function WorkerPage() {
         value={activeTab}
         onChange={(value) => setActiveTab(value as WorkerTab)}
         options={[
-          { value: 'entry', label: '입력' },
+          { value: 'sites', label: '현장 선택' },
+          { value: 'entry', label: '공수 입력' },
           { value: 'calendar', label: '달력·정산' },
-          { value: 'sites', label: '현장 단가' },
         ]}
       />
+
+      {activeTab !== 'sites' && (
+        <Card className="mb-4">
+          <div className="grid grid-cols-3 divide-x divide-slate-100">
+            <div className="text-center">
+              <p className="text-[0.6875rem] text-slate-400 mb-1">이번 달 공수</p>
+              <p className="text-xl font-extrabold text-ink tabular-nums">{totals.manDay}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[0.6875rem] text-slate-400 mb-1">예상 금액</p>
+              <p className="text-xl font-extrabold text-blue-600 tabular-nums">{wonShort(totals.amount)}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[0.6875rem] text-slate-400 mb-1">미지급</p>
+              <p className="text-xl font-extrabold text-amber-600 tabular-nums">{wonShort(totals.unpaid)}</p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {activeTab === 'entry' && (
         <div className="flex flex-col gap-4">
@@ -195,19 +201,12 @@ export default function WorkerPage() {
                 </select>
               </Field>
               <Field label="공수" className="col-span-2">
-                <div className="grid grid-cols-4 gap-2">
-                  {MAN_DAY_OPTIONS.map((value) => (
-                    <button
-                      key={value}
-                      onClick={() => setManDay(value)}
-                      className={cn(
-                        'h-11 rounded-sm border text-sm font-bold transition-colors',
-                        manDay === value ? 'border-blue-600 bg-blue-50 text-blue-600' : 'border-slate-200 text-slate-600 hover:border-blue-300',
-                      )}
-                    >
-                      {value}
-                    </button>
-                  ))}
+                <div className="flex items-center justify-between rounded-sm border border-slate-200 bg-slate-50 px-3 py-2">
+                  <div>
+                    <p className="text-sm font-bold text-ink">공수</p>
+                    <p className="text-xs text-slate-400">0.5 단위로 조절</p>
+                  </div>
+                  <Stepper value={manDay} onChange={setManDay} min={0.5} max={10} step={0.5} size="lg" />
                 </div>
               </Field>
               <Field label="적용 단가">
@@ -357,30 +356,73 @@ export default function WorkerPage() {
       )}
 
       {activeTab === 'sites' && (
-        <Card>
-          <p className="text-sm font-bold text-ink mb-4">현장별 기본 단가</p>
-          <div className="flex flex-col gap-3 mb-4">
-            {workerSites.map((site) => (
-              <div key={site.id} className="flex items-center gap-2">
-                <TradeDot color={site.color} />
-                <span className="text-sm font-semibold text-ink flex-1">{site.name}</span>
-                <input
-                  type="number"
-                  value={site.defaultRate}
-                  onChange={(event) => updateWorkerSite({ ...site, defaultRate: Number(event.target.value) })}
-                  className="w-[124px] h-9 px-2 rounded-sm border border-slate-200 bg-white text-right text-sm text-slate-600 tabular-nums outline-none focus:border-blue-600 focus:ring-[3px] focus:ring-blue-100"
-                />
+        <div className="grid gap-4 wide:grid-cols-[minmax(0,1fr)_320px] wide:items-start">
+          <Card>
+            <p className="text-sm font-bold text-ink mb-1">현장을 선택하세요</p>
+            <p className="text-xs text-slate-400 mb-4">선택한 현장으로 바로 오늘 공수를 입력합니다.</p>
+            <div className="flex flex-col gap-2">
+              {workerSites.map((site) => {
+                const records = monthRecords.filter((record) => record.siteId === site.id)
+                const manDayTotal = records.reduce((sum, record) => sum + record.manDay, 0)
+                return (
+                  <button
+                    key={site.id}
+                    onClick={() => selectSiteForEntry(site.id)}
+                    className={cn(
+                      'flex items-center gap-3 rounded-lg border px-3 py-3 text-left transition-all',
+                      siteId === site.id
+                        ? 'border-blue-300 bg-blue-50'
+                        : 'border-slate-100 bg-white hover:border-blue-300 hover:shadow-sm',
+                    )}
+                  >
+                    <TradeDot color={site.color} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-ink truncate">{site.name}</p>
+                      <p className="text-xs text-slate-400">기본 일당 {wonFmt(site.defaultRate)}원</p>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs font-bold text-blue-600">
+                      <span className="tabular-nums">{manDayTotal}공수</span>
+                      <ChevronRight size={15} />
+                    </div>
+                  </button>
+                )
+              })}
+              {workerSites.length === 0 && <p className="text-sm text-slate-400 py-6 text-center">등록된 현장이 없습니다.</p>}
+            </div>
+          </Card>
+
+          <div className="flex flex-col gap-4 wide:sticky wide:top-6">
+            <Card className="border-blue-200 bg-blue-50/40">
+              <p className="text-sm font-bold text-ink mb-1">새 현장 추가</p>
+              <p className="text-xs text-slate-500 mb-4">현장명만 입력해도 추가할 수 있습니다.</p>
+              <div className="flex flex-col gap-2">
+                <TextInput value={newSiteName} onChange={(event) => setNewSiteName(event.target.value)} placeholder="현장명" />
+                <TextInput type="number" value={newSiteRate} onChange={(event) => setNewSiteRate(event.target.value)} placeholder="일당 (선택)" />
               </div>
-            ))}
+              <Button full className="mt-3" icon={<Plus size={15} />} onClick={saveSite} disabled={!newSiteName.trim()}>
+                현장 추가
+              </Button>
+            </Card>
+
+            <Card>
+              <p className="text-sm font-bold text-ink mb-4">현장별 기본 일당</p>
+              <div className="flex flex-col gap-3">
+                {workerSites.map((site) => (
+                  <div key={site.id} className="flex items-center gap-2">
+                    <TradeDot color={site.color} />
+                    <span className="text-sm font-semibold text-ink flex-1 truncate">{site.name}</span>
+                    <input
+                      type="number"
+                      value={site.defaultRate}
+                      onChange={(event) => updateWorkerSite({ ...site, defaultRate: Number(event.target.value) || 0 })}
+                      className="w-[124px] h-9 px-2 rounded-sm border border-slate-200 bg-white text-right text-sm text-slate-600 tabular-nums outline-none focus:border-blue-600 focus:ring-[3px] focus:ring-blue-100"
+                    />
+                  </div>
+                ))}
+              </div>
+            </Card>
           </div>
-          <div className="grid grid-cols-[1fr_120px] gap-2">
-            <TextInput value={newSiteName} onChange={(event) => setNewSiteName(event.target.value)} placeholder="현장명" />
-            <TextInput type="number" value={newSiteRate} onChange={(event) => setNewSiteRate(event.target.value)} placeholder="단가" />
-          </div>
-          <Button full variant="secondary" className="mt-2" onClick={saveSite} disabled={!newSiteName.trim() || Number(newSiteRate) <= 0}>
-            현장 추가
-          </Button>
-        </Card>
+        </div>
       )}
     </div>
   )

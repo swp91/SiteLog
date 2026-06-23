@@ -1,10 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Building2, Calendar, BarChart2,
-  DollarSign, Wrench, LogOut, Settings, WalletCards,
+  DollarSign, Wrench, LogOut, Settings, WalletCards, RefreshCcw,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar } from '@/components/ui'
@@ -25,8 +25,17 @@ const WORKER_NAV_ITEMS = [
 
 export function Sidebar() {
   const pathname = usePathname()
-  const { user, logout } = useAppStore()
+  const router = useRouter()
+  const { user, logout, switchUserType, flash } = useAppStore()
   const navItems = user.type === 'worker' ? WORKER_NAV_ITEMS : MANAGER_NAV_ITEMS
+  const nextType = user.type === 'worker' ? 'manager' : 'worker'
+  const nextLabel = user.type === 'worker' ? '관리자 모드로 전환' : '노동자 모드로 전환'
+
+  function handleSwitchType() {
+    switchUserType(nextType)
+    flash(nextLabel)
+    router.push(nextType === 'worker' ? '/worker' : '/dashboard')
+  }
 
   return (
     <aside className="hidden wide:flex flex-col w-[244px] shrink-0 h-screen bg-white border-r border-slate-200 fixed top-0 left-0 z-30">
@@ -76,6 +85,13 @@ export function Sidebar() {
           </div>
           <Settings size={15} className="text-slate-400 shrink-0" />
         </Link>
+        <button
+          onClick={handleSwitchType}
+          className="flex items-center gap-2 w-full mt-2 px-2 py-1.5 rounded-xs text-[0.8125rem] text-blue-600 hover:bg-blue-50 transition-colors"
+        >
+          <RefreshCcw size={14} />
+          {nextLabel}
+        </button>
         <button
           onClick={logout}
           className="flex items-center gap-2 w-full mt-1 px-2 py-1.5 rounded-xs text-[0.8125rem] text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors"

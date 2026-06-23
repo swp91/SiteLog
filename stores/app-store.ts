@@ -20,6 +20,7 @@ interface AppState {
 
   // auth
   login: (type?: UserType) => void
+  switchUserType: (type: UserType) => void
   logout: () => Promise<void>
   fetchData: () => Promise<void>
   updateProfile: (patch: { name: string; phone?: string }) => Promise<void>
@@ -98,6 +99,21 @@ export const useAppStore = create<AppState>((set, get) => ({
   toast: '',
 
   login: (type = 'manager') => {
+    const data = cloneDemoData()
+    setDemoSessionType(type)
+    set({
+      authed: true,
+      user: cloneUserForType(type),
+      sites: data.sites,
+      trades: data.trades,
+      records: data.records,
+      journals: data.journals,
+      workerSites: data.workerSites,
+      workerRecords: data.workerRecords,
+    })
+  },
+
+  switchUserType: (type) => {
     const data = cloneDemoData()
     setDemoSessionType(type)
     set({
