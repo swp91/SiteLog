@@ -64,6 +64,28 @@ export default function JournalsPage() {
   const [draftTitle, setDraftTitle] = useState('')
   const [draftBody, setDraftBody] = useState('')
 
+  const [viewOpen, setViewOpen] = useState(false)
+  const [viewingPost, setViewingPost] = useState<JournalPost | null>(null)
+
+  function openViewer(post: JournalPost) {
+    setViewingPost(post)
+    setViewOpen(true)
+  }
+
+  function handleEditFromViewer() {
+    if (!viewingPost) return
+    setViewOpen(false)
+    openEditEditor(viewingPost)
+  }
+
+  async function handleDeleteFromViewer() {
+    if (!viewingPost) return
+    if (confirm('이 일지를 삭제하시겠습니까?')) {
+      await deletePost(viewingPost)
+      setViewOpen(false)
+    }
+  }
+
   const posts = useMemo<JournalPost[]>(() => (
     Object.entries(journals)
       .map(([key, journal]) => {
@@ -165,7 +187,7 @@ export default function JournalsPage() {
           <Card key={post.key} hover className="p-0 overflow-hidden">
             <button
               type="button"
-              onClick={() => openEditEditor(post)}
+              onClick={() => openViewer(post)}
               className="w-full text-left p-4 flex items-start gap-4"
             >
               <div className="hidden wide:flex w-14 h-14 rounded-lg bg-blue-50 text-blue-600 items-center justify-center shrink-0">
@@ -260,6 +282,54 @@ export default function JournalsPage() {
             저장
           </Button>
         </div>
+      </Sheet>
+
+      {/* 일지 상세 보기 시트 */}
+      <Sheet
+        open={viewOpen}
+        onClose={() => setViewOpen(false)}
+        title="일지 상세"
+        maxWidth="720px"
+      >
+        {viewingPost && (
+          <div className="flex flex-col gap-5">
+            <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-3">
+              <span className="rounded bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-600">
+                {viewingPost.site.name}
+              </span>
+              <span className="text-xs text-slate-300">·</span>
+              <span className="text-xs text-slate-500 font-medium">
+                {fmtKDate(parseYmd(viewingPost.date))}
+              </span>
+            </div>
+
+            <div>
+              <h2 className="text-xl font-bold text-ink leading-snug">
+                {viewingPost.title}
+              </h2>
+            </div>
+
+            <div className="journal-content prose prose-slate max-w-none text-[0.9375rem] text-slate-600 leading-relaxed break-all">
+              {viewingPost.body ? (
+                <div dangerouslySetInnerHTML={{ __html: viewingPost.body }} />
+              ) : (
+                <p className="text-slate-400 italic">내용이 없는 일지입니다.</p>
+              )}
+            </div>
+
+            <div className="mt-8 flex justify-end gap-2 border-t border-slate-100 pt-4">
+              <Button variant="outline" onClick={() => setViewOpen(false)}>
+                닫기
+              </Button>
+              <Button variant="danger" icon={<Trash2 size={15} />} onClick={handleDeleteFromViewer}>
+                삭제
+              </Button>
+              <Button variant="primary" icon={<Pencil size={15} />} onClick={handleEditFromViewer}>
+                수정하기
+              </Button>
+            </div>
+          </div>
+        )}
       </Sheet>
     </div>
   )

@@ -12,7 +12,8 @@ import {
   Heading2,
   Heading3,
   Image,
-  Trash2
+  Trash2,
+  Type
 } from 'lucide-react'
 import { useAppStore } from '@/stores/app-store'
 

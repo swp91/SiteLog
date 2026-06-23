@@ -1,5 +1,7 @@
 {
-  "projects": {},
+  "projects": {
+    "default": "sitelog-app-f791"
+  },
   "targets": {},
   "etags": {}
 }
