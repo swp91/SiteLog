@@ -432,12 +432,17 @@ if (typeof window !== 'undefined') {
         }
 
         
-        // 데이터 실시간 로드 시작
-        await useAppStore.getState().fetchData()
-
+        // 1. 유저 상태를 먼저 설정하여 uid를 확보합니다.
         useAppStore.setState({
           authed: true,
-          user: userData,
+          user: userData
+        })
+        
+        // 2. 데이터 실시간 로드를 수행합니다 (get().user.id가 존재하게 됨).
+        await useAppStore.getState().fetchData()
+
+        // 3. 로딩이 완료되었음을 설정합니다.
+        useAppStore.setState({
           authInitialized: true
         })
       } catch (e) {
