@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { CalendarDays, ChevronRight, FileText, ImagePlus, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
 import { TopBar } from '@/components/layout/top-bar'
-import { Button, Card, Field, Sheet, TextInput } from '@/components/ui'
+import { Button, Card, Field, Sheet, TextInput, RichTextEditor } from '@/components/ui'
 import { useAppStore } from '@/stores/app-store'
 import { cn, fmtKDate, parseYmd, ymd } from '@/lib/utils'
 import type { Journal, JournalPhoto, Site } from '@/lib/types'
@@ -23,23 +23,36 @@ function journalBody(journal: Journal) {
   return journal.body ?? journal.memo ?? ''
 }
 
+function stripHtml(html: string) {
+  if (!html) return ''
+  return html.replace(/<[^>]*>/g, '')
+}
+
+function extractPhotos(html: string): JournalPhoto[] {
+  if (!html) return []
+  const imgRegex = /<img[^>]+src="([^">]+)"/g
+  const photos: JournalPhoto[] = []
+  let match
+  let count = 1
+  while ((match = imgRegex.exec(html)) !== null) {
+    photos.push({
+      id: `photo-${count}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+      name: `photo-${count}`,
+      url: match[1],
+    })
+  }
+  return photos
+}
+
 function journalTitle(journal: Journal) {
   const body = journalBody(journal).trim()
-  return journal.title?.trim() || body.split('\n')[0] || '제목 없음'
+  return journal.title?.trim() || stripHtml(body).split('\n')[0] || '제목 없음'
 }
 
 function journalPhotos(journal: Journal) {
   return journal.photos ?? []
 }
 
-function readFileAsDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(String(reader.result))
-    reader.onerror = () => reject(reader.error)
-    reader.readAsDataURL(file)
-  })
-}
 
 export default function JournalsPage() {
   const { sites, journals, setJournal, flash } = useAppStore()
@@ -50,7 +63,6 @@ export default function JournalsPage() {
   const [draftDate, setDraftDate] = useState(ymd(new Date()))
   const [draftTitle, setDraftTitle] = useState('')
   const [draftBody, setDraftBody] = useState('')
-  const [draftPhotos, setDraftPhotos] = useState<JournalPhoto[]>([])
 
   const posts = useMemo<JournalPost[]>(() => (
     Object.entries(journals)
@@ -76,7 +88,7 @@ export default function JournalsPage() {
   const filteredPosts = posts.filter((post) => {
     const needle = query.trim().toLowerCase()
     if (!needle) return true
-    return [post.title, post.body, post.site.name]
+    return [post.title, stripHtml(post.body), post.site.name]
       .some((value) => value.toLowerCase().includes(needle))
   })
 
@@ -86,7 +98,6 @@ export default function JournalsPage() {
     setDraftDate(ymd(new Date()))
     setDraftTitle('')
     setDraftBody('')
-    setDraftPhotos([])
     setEditorOpen(true)
   }
 
@@ -96,27 +107,10 @@ export default function JournalsPage() {
     setDraftDate(post.date)
     setDraftTitle(post.journal.title ?? '')
     setDraftBody(post.body)
-    setDraftPhotos(post.photos)
     setEditorOpen(true)
   }
 
-  async function handlePhotoAdd(files: FileList | null) {
-    if (!files?.length) return
-
-    const nextPhotos = await Promise.all(Array.from(files).map(async (file) => ({
-      id: `photo-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      url: await readFileAsDataUrl(file),
-    })))
-
-    setDraftPhotos((value) => [...value, ...nextPhotos])
-  }
-
-  function removePhoto(id: string) {
-    setDraftPhotos((value) => value.filter((photo) => photo.id !== id))
-  }
+  // handlePhotoAdd, removePhoto removed
 
   async function savePost() {
     if (!draftSiteId) return
@@ -130,7 +124,7 @@ export default function JournalsPage() {
       title: draftTitle.trim(),
       body: draftBody,
       memo: draftBody,
-      photos: draftPhotos,
+      photos: extractPhotos(draftBody),
     })
     setEditorOpen(false)
     flash(editingKey ? '일지를 수정했어요' : '일지를 작성했어요')
@@ -141,7 +135,7 @@ export default function JournalsPage() {
     flash('일지를 삭제했어요')
   }
 
-  const canSave = Boolean(draftSiteId && (draftTitle.trim() || draftBody.trim() || draftPhotos.length))
+  const canSave = Boolean(draftSiteId && (draftTitle.trim() || draftBody.trim()))
 
   return (
     <div className="max-w-[980px] mx-auto px-4 pb-8">
@@ -189,7 +183,7 @@ export default function JournalsPage() {
                   )}
                 </div>
                 <p className="text-base font-bold text-ink truncate">{post.title}</p>
-                <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-500">{post.body || '사진만 첨부된 일지입니다.'}</p>
+                <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-500">{stripHtml(post.body) || '사진만 첨부된 일지입니다.'}</p>
                 {post.photos.length > 0 && (
                   <div className="mt-3 flex gap-2 overflow-hidden">
                     {post.photos.slice(0, 4).map((photo) => (
@@ -250,59 +244,12 @@ export default function JournalsPage() {
             <TextInput value={draftTitle} onChange={(event) => setDraftTitle(event.target.value)} placeholder="제목을 입력하세요" />
           </Field>
           <Field label="본문" className="wide:col-span-2">
-            <textarea
+            <RichTextEditor
               value={draftBody}
-              onChange={(event) => setDraftBody(event.target.value)}
+              onChange={setDraftBody}
               placeholder="작업 내용, 특이사항, 전달할 내용을 자유롭게 작성하세요."
-              className="min-h-[260px] w-full resize-y rounded border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-ink outline-none transition-colors placeholder:text-slate-400 focus:border-blue-600 focus:ring-[3px] focus:ring-blue-100"
             />
           </Field>
-        </div>
-
-        <div className="mt-5">
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-[0.8125rem] font-semibold text-slate-700">사진 첨부</p>
-            <label className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-sm bg-blue-50 px-3 text-[0.8125rem] font-semibold text-blue-600 hover:bg-blue-100">
-              <ImagePlus size={15} />
-              사진 추가
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={(event) => {
-                  void handlePhotoAdd(event.target.files)
-                  event.currentTarget.value = ''
-                }}
-              />
-            </label>
-          </div>
-
-          <div className={cn(
-            'grid gap-2',
-            draftPhotos.length > 0 ? 'grid-cols-2 wide:grid-cols-4' : 'grid-cols-1',
-          )}>
-            {draftPhotos.map((photo) => (
-              <div key={photo.id} className="group relative overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
-                <img src={photo.url} alt={photo.name} className="aspect-square w-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => removePhoto(photo.id)}
-                  className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-ink/70 text-white opacity-100 transition-opacity wide:opacity-0 wide:group-hover:opacity-100"
-                >
-                  <X size={16} />
-                </button>
-                <p className="truncate px-2 py-1.5 text-xs text-slate-500">{photo.name}</p>
-              </div>
-            ))}
-            {draftPhotos.length === 0 && (
-              <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center">
-                <ImagePlus size={24} className="mx-auto mb-2 text-slate-300" />
-                <p className="text-sm font-semibold text-slate-500">첨부된 사진이 없습니다</p>
-                <p className="mt-1 text-xs text-slate-400">여러 장을 한 번에 선택할 수 있습니다.</p>
-              </div>
-            )}
-          </div>
         </div>
 
         <div className="mt-6 flex justify-end gap-2">
