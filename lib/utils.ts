@@ -58,7 +58,10 @@ export function wonFmt(n: number): string {
 
 export function wonShort(n: number): string {
   if (n >= 100_000_000) return (n / 100_000_000).toFixed(n % 100_000_000 === 0 ? 0 : 1) + '억'
-  if (n >= 10_000) return Math.round(n / 10_000).toLocaleString('ko-KR') + '만'
+  if (n >= 10_000) {
+    const man = Math.round(n / 1_000) / 10
+    return man.toLocaleString('ko-KR', { maximumFractionDigits: 1 }) + '만'
+  }
   return wonFmt(n)
 }
 
