@@ -629,7 +629,7 @@ function WorkerSettlementReport({
       <div className="mb-6 flex items-start justify-between border-b border-slate-200 pb-4">
         <div>
           <p className="text-xs font-bold text-blue-600">SiteLog</p>
-          <h2 className="mt-1 text-2xl font-extrabold text-ink">내 공수 정산서</h2>
+          <h2 className="mt-1 text-2xl font-extrabold text-ink">공수 정산서</h2>
           <p className="mt-1 text-sm text-slate-500">{modeLabel} · {periodLabel}</p>
         </div>
         <p className="text-xs text-slate-400">출력일 {ymd(new Date())}</p>
