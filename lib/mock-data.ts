@@ -237,12 +237,14 @@ export const SEED_RECORDS: Records = {
 
 export const SEED_JOURNALS: Journals = {
   [`site-1|${ymd(today)}`]: {
-    memo: "거실 목공 마감과 전기 배선 확인.",
-    photos: 0,
+    title: "거실 목공 마감 확인",
+    body: "거실 목공 마감과 전기 배선 확인.",
+    photos: [],
   },
   [`site-2|${ymd(today)}`]: {
-    memo: "주방 설비 위치 조정, 도장 전 퍼티 작업 진행.",
-    photos: 0,
+    title: "주방 설비 위치 조정",
+    body: "주방 설비 위치 조정, 도장 전 퍼티 작업 진행.",
+    photos: [],
   },
 };
 

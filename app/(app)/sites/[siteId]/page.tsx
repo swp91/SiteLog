@@ -9,7 +9,6 @@ import { ymd } from '@/lib/utils'
 import { InputStepperTab } from './tabs/input-stepper'
 import { CalendarTab } from './tabs/calendar'
 import { TableTab } from './tabs/table'
-import { JournalTab } from './tabs/journal'
 import type { SiteStatus } from '@/lib/types'
 
 const statusTone: Record<SiteStatus, 'blue' | 'amber' | 'slate'> = {
@@ -20,13 +19,12 @@ const TABS = [
   { value: 'input',   label: '입력' },
   { value: 'calendar', label: '달력' },
   { value: 'table',   label: '표' },
-  { value: 'journal', label: '일지' },
 ]
 
 export default function SiteDetailPage({ params }: { params: Promise<{ siteId: string }> }) {
   const { siteId } = use(params)
   const router = useRouter()
-  const { sites, trades, records, journals, setAttendance, setJournal } = useAppStore()
+  const { sites, trades, records, setAttendance } = useAppStore()
 
   const site = sites.find((s) => s.id === siteId)
   const [tab, setTab] = useState('input')
@@ -42,7 +40,7 @@ export default function SiteDetailPage({ params }: { params: Promise<{ siteId: s
     )
   }
 
-  const showDateStrip = tab === 'input' || tab === 'journal'
+  const showDateStrip = tab === 'input'
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -77,7 +75,7 @@ export default function SiteDetailPage({ params }: { params: Promise<{ siteId: s
           />
         </div>
 
-        {/* Date strip — only for input and journal tabs */}
+        {/* Date strip — only for input tab */}
         {showDateStrip && (
           <DateStrip selected={date} onChange={setDate} />
         )}
@@ -105,14 +103,6 @@ export default function SiteDetailPage({ params }: { params: Promise<{ siteId: s
         )}
         {tab === 'table' && (
           <TableTab site={site} trades={trades} records={records} />
-        )}
-        {tab === 'journal' && (
-          <JournalTab
-            site={site}
-            date={date}
-            journals={journals}
-            onSave={(patch) => setJournal(site.id, date, patch)}
-          />
         )}
       </div>
     </div>

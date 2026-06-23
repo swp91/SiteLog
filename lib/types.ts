@@ -33,9 +33,19 @@ export type DayRecord = Record<string, AttendanceEntry>
 /** key: "siteId|YYYY-MM-DD" */
 export type Records = Record<string, DayRecord>
 
+export interface JournalPhoto {
+  id: string
+  name: string
+  url: string
+  size?: number
+  type?: string
+}
+
 export interface Journal {
+  title?: string
+  body?: string
   memo?: string
-  photos?: number
+  photos?: JournalPhoto[]
 }
 
 /** key: "siteId|YYYY-MM-DD" */

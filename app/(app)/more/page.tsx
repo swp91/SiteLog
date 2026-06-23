@@ -1,11 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { DollarSign, Wrench, Settings, ChevronRight } from 'lucide-react'
+import { DollarSign, Wrench, Settings, ChevronRight, NotebookText } from 'lucide-react'
 import { TopBar } from '@/components/layout/top-bar'
 import { Card } from '@/components/ui'
 
 const ITEMS = [
+  { href: '/journals', icon: NotebookText, label: '일지', desc: '현장 작업 내용을 게시글처럼 기록' },
   { href: '/payroll', icon: DollarSign, label: '노무비 계산', desc: '공종별 일당 × man-day' },
   { href: '/trades',  icon: Wrench,     label: '공종 · 업체',  desc: '협력사 관리 및 일당 설정' },
   { href: '/settings', icon: Settings,  label: '내 정보 · 설정', desc: '프로필, 계정, 알림 관리' },

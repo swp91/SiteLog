@@ -1,7 +1,7 @@
 'use client'
 
 import { create } from 'zustand'
-import type { AppUser, Journals, Records, Site, Trade, UserType, WorkerRecord, WorkerSite } from '@/lib/types'
+import type { AppUser, Journal, Journals, Records, Site, Trade, UserType, WorkerRecord, WorkerSite } from '@/lib/types'
 import { cloneDemoData, cloneUserForType } from '@/lib/mock-data'
 import { withEntry } from '@/lib/utils'
 
@@ -39,7 +39,7 @@ interface AppState {
   setAttendance: (siteId: string, dateStr: string, tradeId: string, patch: Partial<{ count: number; memo: string }>) => Promise<void>
 
   // journal
-  setJournal: (siteId: string, dateStr: string, patch: Partial<{ memo: string; photos: number }>) => Promise<void>
+  setJournal: (siteId: string, dateStr: string, patch: Partial<Journal>) => Promise<void>
 
   // worker ledger
   addWorkerSite: (site: Omit<WorkerSite, 'id'>) => Promise<void>
@@ -202,10 +202,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     const key = `${siteId}|${dateStr}`
 
     set((s) => {
-      const prev = s.journals[key] ?? { memo: '', photos: 0 }
+      const prev = s.journals[key] ?? { title: '', body: '', memo: '', photos: [] }
       const next = { ...prev, ...patch }
+      const body = next.body ?? next.memo ?? ''
+      const photoCount = next.photos?.length ?? 0
 
-      if (!next.memo && !next.photos) {
+      if (!next.title && !body && photoCount === 0) {
         const { [key]: _, ...rest } = s.journals
         return { journals: rest }
       }

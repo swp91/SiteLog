@@ -23,12 +23,15 @@ export function BottomNav() {
   const pathname = usePathname()
   const userType = useAppStore((s) => s.user.type)
   const tabs = userType === 'worker' ? WORKER_TABS : MANAGER_TABS
+  const moreRoutes = ['/payroll', '/trades', '/settings', '/journals']
 
   return (
     <nav className="wide:hidden fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-slate-200">
       <div className="flex">
         {tabs.map(({ href, icon: Icon, label }) => {
-          const active = pathname === href || (href !== '/more' && pathname.startsWith(href + '/'))
+          const active = pathname === href ||
+            (href === '/more' && moreRoutes.some((route) => pathname === route || pathname.startsWith(route + '/'))) ||
+            (href !== '/more' && pathname.startsWith(href + '/'))
           return (
             <Link
               key={href}

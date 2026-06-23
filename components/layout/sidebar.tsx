@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Building2, Calendar, BarChart2,
-  DollarSign, Wrench, LogOut, Settings, WalletCards, RefreshCcw,
+  DollarSign, Wrench, LogOut, Settings, WalletCards, RefreshCcw, NotebookText,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar } from '@/components/ui'
@@ -13,6 +13,7 @@ import { useAppStore } from '@/stores/app-store'
 const MANAGER_NAV_ITEMS = [
   { href: '/dashboard', icon: LayoutDashboard, label: '대시보드' },
   { href: '/sites',     icon: Building2,       label: '현장' },
+  { href: '/journals',  icon: NotebookText,    label: '일지' },
   { href: '/calendar',  icon: Calendar,        label: '통합 달력' },
   { href: '/stats',     icon: BarChart2,       label: '월별 통계' },
   { href: '/payroll',   icon: DollarSign,      label: '노무비' },
