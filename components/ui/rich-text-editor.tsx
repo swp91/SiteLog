@@ -11,15 +11,52 @@ import {
   Quote,
   Heading2,
   Heading3,
-  Type,
   Image,
   Trash2
 } from 'lucide-react'
+import { useAppStore } from '@/stores/app-store'
 
 interface RichTextEditorProps {
   value: string
   onChange: (value: string) => void
   placeholder?: string
+}
+
+// 브라우저 Canvas API를 사용한 WebP 변환 및 이미지 압축 헬퍼
+function compressAndConvertToWebp(file: File, maxWidth = 1200, quality = 0.75): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const img = new window.Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let width = img.width
+        let height = img.height
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width)
+          width = maxWidth
+        }
+
+        canvas.width = width
+        canvas.height = height
+
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          reject(new Error('Canvas context is not available'))
+          return
+        }
+
+        ctx.drawImage(img, 0, 0, width, height)
+        const webpDataUrl = canvas.toDataURL('image/webp', quality)
+        resolve(webpDataUrl)
+      }
+      img.onerror = (err) => reject(err)
+      img.src = event.target?.result as string
+    }
+    reader.onerror = (err) => reject(err)
+    reader.readAsDataURL(file)
+  })
 }
 
 export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
@@ -58,17 +95,28 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
     const files = e.target.files
     if (!files || files.length === 0) return
 
+    const flash = useAppStore.getState().flash
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
-      const dataUrl = await new Promise<string>((resolve) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve(String(reader.result))
-        reader.readAsDataURL(file)
-      })
 
-      if (typeof document !== 'undefined') {
-        editorRef.current?.focus()
-        document.execCommand('insertImage', false, dataUrl)
+      // GIF 제외 처리
+      if (file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif')) {
+        flash('GIF 이미지는 업로드할 수 없습니다.')
+        continue
+      }
+
+      try {
+        // WebP 변환 및 리사이징 압축
+        const dataUrl = await compressAndConvertToWebp(file)
+
+        if (typeof document !== 'undefined') {
+          editorRef.current?.focus()
+          document.execCommand('insertImage', false, dataUrl)
+        }
+      } catch (err) {
+        console.error('Image compression error:', err)
+        flash('이미지 압축에 실패했습니다.')
       }
     }
 
