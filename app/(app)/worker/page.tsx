@@ -14,6 +14,7 @@ TODAY.setHours(0, 0, 0, 0)
 const SITE_COLORS = ['#2563EB', '#14B8A6', '#F59E0B', '#EC4899', '#8B5CF6', '#64748B']
 
 type WorkerTab = 'entry' | 'calendar' | 'sites'
+type SettlementMode = 'month' | 'year'
 
 export default function WorkerPage() {
   const {
@@ -28,6 +29,7 @@ export default function WorkerPage() {
   } = useAppStore()
 
   const [activeTab, setActiveTab] = useState<WorkerTab>('sites')
+  const [settlementMode, setSettlementMode] = useState<SettlementMode>('month')
   const [month, setMonth] = useState(() => new Date(TODAY.getFullYear(), TODAY.getMonth(), 1))
   const [date, setDate] = useState(ymd(TODAY))
   const [siteId, setSiteId] = useState('')
@@ -51,11 +53,17 @@ export default function WorkerPage() {
     () => workerRecords.filter((record) => record.date >= fromStr && record.date <= toStr),
     [fromStr, toStr, workerRecords],
   )
+  const yearStr = String(month.getFullYear())
+  const yearRecords = useMemo(
+    () => workerRecords.filter((record) => record.date.startsWith(`${yearStr}-`)),
+    [yearStr, workerRecords],
+  )
+  const settlementRecords = settlementMode === 'year' ? yearRecords : monthRecords
 
   const todayRecords = workerRecords.filter((record) => record.date === ymd(TODAY))
 
-  const totals = useMemo(() => {
-    return monthRecords.reduce(
+  function summarizeRecords(records: typeof workerRecords) {
+    return records.reduce(
       (acc, record) => {
         const amount = record.manDay * record.rate
         acc.manDay += record.manDay
@@ -66,16 +74,24 @@ export default function WorkerPage() {
       },
       { manDay: 0, amount: 0, paid: 0, unpaid: 0 },
     )
-  }, [monthRecords])
+  }
+
+  const monthTotals = useMemo(() => summarizeRecords(monthRecords), [monthRecords])
+  const settlementTotals = useMemo(() => summarizeRecords(settlementRecords), [settlementRecords])
+  const activeTotals = activeTab === 'calendar' ? settlementTotals : monthTotals
+  const totalsScopeLabel = activeTab === 'calendar' && settlementMode === 'year' ? '올해' : '이번 달'
 
   const siteSummaries = workerSites.map((site) => {
-    const records = monthRecords.filter((record) => record.siteId === site.id)
+    const records = settlementRecords.filter((record) => record.siteId === site.id)
     const manDayTotal = records.reduce((sum, record) => sum + record.manDay, 0)
     const amount = records.reduce((sum, record) => sum + record.manDay * record.rate, 0)
+    const paid = records
+      .filter((record) => record.paymentStatus === 'paid')
+      .reduce((sum, record) => sum + record.manDay * record.rate, 0)
     const unpaid = records
       .filter((record) => record.paymentStatus === 'unpaid')
       .reduce((sum, record) => sum + record.manDay * record.rate, 0)
-    return { site, manDay: manDayTotal, amount, unpaid }
+    return { site, manDay: manDayTotal, amount, paid, unpaid }
   }).filter((summary) => summary.manDay > 0)
 
   const monthStart = startOfMonth(month)
@@ -166,16 +182,16 @@ export default function WorkerPage() {
         <Card className="mb-4">
           <div className="grid grid-cols-3 divide-x divide-slate-100">
             <div className="text-center">
-              <p className="text-[0.6875rem] text-slate-400 mb-1">이번 달 공수</p>
-              <p className="text-xl font-extrabold text-ink tabular-nums">{totals.manDay}</p>
+              <p className="text-[0.6875rem] text-slate-400 mb-1">{totalsScopeLabel} 공수</p>
+              <p className="text-xl font-extrabold text-ink tabular-nums">{activeTotals.manDay}</p>
             </div>
             <div className="text-center">
               <p className="text-[0.6875rem] text-slate-400 mb-1">예상 금액</p>
-              <p className="text-xl font-extrabold text-blue-600 tabular-nums">{wonShort(totals.amount)}</p>
+              <p className="text-xl font-extrabold text-blue-600 tabular-nums">{wonShort(activeTotals.amount)}</p>
             </div>
             <div className="text-center">
               <p className="text-[0.6875rem] text-slate-400 mb-1">미지급</p>
-              <p className="text-xl font-extrabold text-amber-600 tabular-nums">{wonShort(totals.unpaid)}</p>
+              <p className="text-xl font-extrabold text-amber-600 tabular-nums">{wonShort(activeTotals.unpaid)}</p>
             </div>
           </div>
         </Card>
@@ -262,88 +278,143 @@ export default function WorkerPage() {
 
       {activeTab === 'calendar' && (
         <div className="flex flex-col gap-4">
+          <Segmented
+            full
+            value={settlementMode}
+            onChange={(value) => setSettlementMode(value as SettlementMode)}
+            options={[
+              { value: 'month', label: '월간 정산' },
+              { value: 'year', label: '연간 정산' },
+            ]}
+          />
+
           <Card>
             <div className="flex items-center justify-between mb-4">
               <button
-                onClick={() => setMonth((value) => new Date(value.getFullYear(), value.getMonth() - 1, 1))}
+                onClick={() => setMonth((value) => (
+                  settlementMode === 'year'
+                    ? new Date(value.getFullYear() - 1, value.getMonth(), 1)
+                    : new Date(value.getFullYear(), value.getMonth() - 1, 1)
+                ))}
                 className="w-9 h-9 flex items-center justify-center rounded-sm hover:bg-slate-100 transition-colors"
               >
                 <ChevronLeft size={18} />
               </button>
-              <p className="text-base font-bold text-ink">{month.getFullYear()}년 {month.getMonth() + 1}월</p>
+              <p className="text-base font-bold text-ink">
+                {settlementMode === 'year' ? `${month.getFullYear()}년` : `${month.getFullYear()}년 ${month.getMonth() + 1}월`}
+              </p>
               <button
-                onClick={() => setMonth((value) => new Date(value.getFullYear(), value.getMonth() + 1, 1))}
+                onClick={() => setMonth((value) => (
+                  settlementMode === 'year'
+                    ? new Date(value.getFullYear() + 1, value.getMonth(), 1)
+                    : new Date(value.getFullYear(), value.getMonth() + 1, 1)
+                ))}
                 className="w-9 h-9 flex items-center justify-center rounded-sm hover:bg-slate-100 transition-colors"
               >
                 <ChevronRight size={18} />
               </button>
             </div>
-            <div className="grid grid-cols-7 mb-1">
-              {['월', '화', '수', '목', '금', '토', '일'].map((day) => (
-                <div key={day} className="text-center text-[0.6875rem] font-semibold py-1 text-slate-400">{day}</div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-0.5">
-              {days.map((day) => {
-                const str = ymd(day)
-                const records = monthRecords.filter((record) => record.date === str)
-                const daySiteSummaries = workerSites
-                  .map((site) => {
-                    const siteManDay = records
-                      .filter((record) => record.siteId === site.id)
-                      .reduce((sum, record) => sum + record.manDay, 0)
-                    return { site, manDay: siteManDay }
-                  })
-                  .filter((summary) => summary.manDay > 0)
-                const visibleSummaries = daySiteSummaries.slice(0, 2)
-                const hiddenSummaryCount = daySiteSummaries.length - visibleSummaries.length
-                const dayAmount = records.reduce((sum, record) => sum + record.manDay * record.rate, 0)
-                return (
-                  <button
-                    key={str}
-                    onClick={() => setDate(str)}
-                    className={cn(
-                      'min-h-[76px] rounded-sm p-1.5 text-left transition-colors hover:bg-slate-100',
-                      day.getMonth() !== month.getMonth() && 'opacity-30',
-                      date === str && 'bg-blue-50 ring-1 ring-blue-200',
-                    )}
-                  >
-                    <span className="block text-[0.75rem] font-bold text-ink">{day.getDate()}</span>
-                    {visibleSummaries.length > 0 && (
-                      <span className="mt-1 flex flex-col gap-0.5">
-                        {visibleSummaries.map(({ site, manDay: siteManDay }) => (
-                          <span key={site.id} className="flex items-center gap-1 min-w-0">
-                            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: site.color }} />
-                            <span className="text-[0.625rem] font-bold text-slate-600 tabular-nums truncate">
-                              {siteManDay}공수
-                            </span>
-                          </span>
-                        ))}
-                        {hiddenSummaryCount > 0 && (
-                          <span className="text-[0.625rem] font-bold text-slate-400">+{hiddenSummaryCount}</span>
+            {settlementMode === 'month' ? (
+              <>
+                <div className="grid grid-cols-7 mb-1">
+                  {['월', '화', '수', '목', '금', '토', '일'].map((day) => (
+                    <div key={day} className="text-center text-[0.6875rem] font-semibold py-1 text-slate-400">{day}</div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-0.5">
+                  {days.map((day) => {
+                    const str = ymd(day)
+                    const records = monthRecords.filter((record) => record.date === str)
+                    const daySiteSummaries = workerSites
+                      .map((site) => {
+                        const siteManDay = records
+                          .filter((record) => record.siteId === site.id)
+                          .reduce((sum, record) => sum + record.manDay, 0)
+                        return { site, manDay: siteManDay }
+                      })
+                      .filter((summary) => summary.manDay > 0)
+                    const visibleSummaries = daySiteSummaries.slice(0, 2)
+                    const hiddenSummaryCount = daySiteSummaries.length - visibleSummaries.length
+                    const dayAmount = records.reduce((sum, record) => sum + record.manDay * record.rate, 0)
+                    return (
+                      <button
+                        key={str}
+                        onClick={() => setDate(str)}
+                        className={cn(
+                          'min-h-[76px] rounded-sm p-1.5 text-left transition-colors hover:bg-slate-100',
+                          day.getMonth() !== month.getMonth() && 'opacity-30',
+                          date === str && 'bg-blue-50 ring-1 ring-blue-200',
                         )}
-                      </span>
-                    )}
-                    {dayAmount > 0 && (
-                      <span className="mt-1 block text-[0.625rem] font-extrabold text-blue-600 tabular-nums">
-                        {wonShort(dayAmount)}
-                      </span>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
+                      >
+                        <span className="block text-[0.75rem] font-bold text-ink">{day.getDate()}</span>
+                        {visibleSummaries.length > 0 && (
+                          <span className="mt-1 flex flex-col gap-0.5">
+                            {visibleSummaries.map(({ site, manDay: siteManDay }) => (
+                              <span key={site.id} className="flex items-center gap-1 min-w-0">
+                                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: site.color }} />
+                                <span className="text-[0.625rem] font-bold text-slate-600 tabular-nums truncate">
+                                  {siteManDay}공수
+                                </span>
+                              </span>
+                            ))}
+                            {hiddenSummaryCount > 0 && (
+                              <span className="text-[0.625rem] font-bold text-slate-400">+{hiddenSummaryCount}</span>
+                            )}
+                          </span>
+                        )}
+                        {dayAmount > 0 && (
+                          <span className="mt-1 block text-[0.625rem] font-extrabold text-blue-600 tabular-nums">
+                            {wonShort(dayAmount)}
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </>
+            ) : (
+              <div className="grid grid-cols-3 divide-x divide-slate-100">
+                <div className="text-center">
+                  <p className="text-[0.6875rem] text-slate-400 mb-1">연간 공수</p>
+                  <p className="text-xl font-extrabold text-ink tabular-nums">{settlementTotals.manDay}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[0.6875rem] text-slate-400 mb-1">연간 합계</p>
+                  <p className="text-xl font-extrabold text-blue-600 tabular-nums">{wonShort(settlementTotals.amount)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[0.6875rem] text-slate-400 mb-1">미지급</p>
+                  <p className="text-xl font-extrabold text-amber-600 tabular-nums">{wonShort(settlementTotals.unpaid)}</p>
+                </div>
+              </div>
+            )}
           </Card>
 
           <Card>
             <p className="text-sm font-bold text-ink mb-3">현장별 정산</p>
+            <div className="grid grid-cols-3 divide-x divide-slate-100 rounded-sm bg-slate-50 py-3 mb-3">
+              <div className="text-center">
+                <p className="text-[0.6875rem] text-slate-400 mb-1">합산 금액</p>
+                <p className="text-sm font-extrabold text-blue-600 tabular-nums">{wonShort(settlementTotals.amount)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[0.6875rem] text-slate-400 mb-1">지급 합산</p>
+                <p className="text-sm font-extrabold text-emerald-600 tabular-nums">{wonShort(settlementTotals.paid)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[0.6875rem] text-slate-400 mb-1">미지급 합산</p>
+                <p className="text-sm font-extrabold text-amber-600 tabular-nums">{wonShort(settlementTotals.unpaid)}</p>
+              </div>
+            </div>
             <div className="flex flex-col gap-3">
-              {siteSummaries.map(({ site, manDay: siteManDay, amount, unpaid }) => (
+              {siteSummaries.map(({ site, manDay: siteManDay, amount, paid, unpaid }) => (
                 <div key={site.id} className="flex items-center gap-3 py-2 border-b border-slate-100 last:border-0">
                   <TradeDot color={site.color} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-ink truncate">{site.name}</p>
-                    <p className="text-xs text-slate-400">{siteManDay}공수 · 미지급 {wonFmt(unpaid)}원</p>
+                    <p className="text-xs text-slate-400">
+                      {siteManDay}공수 · 지급 {wonFmt(paid)}원 · 미지급 {wonFmt(unpaid)}원
+                    </p>
                   </div>
                   <p className="text-sm font-extrabold text-blue-600 tabular-nums">{wonFmt(amount)}원</p>
                 </div>
@@ -352,6 +423,7 @@ export default function WorkerPage() {
             </div>
           </Card>
 
+          {settlementMode === 'month' && (
           <Card>
             <p className="text-sm font-bold text-ink mb-3">이번 달 기록</p>
             <div className="flex flex-col gap-2">
@@ -381,6 +453,7 @@ export default function WorkerPage() {
               {monthRecords.length === 0 && <p className="text-sm text-slate-400 py-6 text-center">기록이 없습니다.</p>}
             </div>
           </Card>
+          )}
         </div>
       )}
 
