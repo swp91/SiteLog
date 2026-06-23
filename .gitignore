@@ -28,3 +28,7 @@ npm-debug.log*
 .claude/
 .env
 .env.local
+
+# Agent/Claude configurations
+/AGENTS.md
+/CLAUDE.md
