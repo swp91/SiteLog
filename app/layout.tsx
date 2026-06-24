@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import { OfflineIndicator } from '@/components/ui/offline-indicator'
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -38,7 +39,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body>
+        <OfflineIndicator />
+        {children}
+      </body>
     </html>
   )
 }
