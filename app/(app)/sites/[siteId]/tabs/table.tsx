@@ -1,9 +1,10 @@
 'use client'
 
 import { useMemo, useState, type ReactNode } from 'react'
-import { Download, Eye, Printer } from 'lucide-react'
+import { Download, Eye, Printer, Share2 } from 'lucide-react'
 import { Button, Segmented, Sheet, TradeDot, TextInput } from '@/components/ui'
-import { ymd, addDays, fmtKShort, parseYmd, startOfMonth, endOfMonth, dayEntries } from '@/lib/utils'
+import { ymd, addDays, fmtKShort, parseYmd, startOfMonth, endOfMonth, dayEntries, shareText } from '@/lib/utils'
+import { useAppStore } from '@/stores/app-store'
 import type { Site, Trade, Records } from '@/lib/types'
 
 interface Props {
@@ -51,9 +52,49 @@ function formatManDay(value: number) {
 export function TableTab({ site, trades, records }: Props) {
   const [periodMode, setPeriodMode] = useState<PeriodMode>('all')
   const [previewOpen, setPreviewOpen] = useState(false)
+  const flash = useAppStore((state) => state.flash)
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
+
+  function handleShare() {
+    const tradeLines = activeTrades
+      .map((trade) => `- ${trade.name}: ${formatManDay(tradeTotal(trade.id))}공수`)
+      .join('\n')
+
+    const monthLines = monthGroups
+      .map((group) => `- ${group.label}: ${formatManDay(totalForDays(group.days))}공수`)
+      .join('\n')
+
+    const summaryText = `[SiteLog 현장 출근 요약]
+현장명: ${site.name}
+기간: ${fromLabel} ~ ${toLabel}
+총 공수: ${formatManDay(grandTotal)}공수
+참여 공종: ${activeTrades.length}개
+
+월별 현황:
+${monthLines || '현황 없음'}
+
+공종별 누적 공수:
+${tradeLines || '내역 없음'}
+
+상세 내역은 SiteLog에서 확인하세요.`
+
+    shareText({
+      title: `${site.name} 출근기록 요약`,
+      text: summaryText,
+      onSuccess: (type) => {
+        if (type === 'share') {
+          flash('공유창을 열었습니다')
+        } else {
+          flash('출근기록 요약이 클립보드에 복사되었습니다')
+        }
+      },
+      onError: () => {
+        flash('공유하기에 실패했습니다')
+      },
+    })
+  }
 
   const siteDates = useMemo(
     () =>
@@ -190,6 +231,9 @@ export function TableTab({ site, trades, records }: Props) {
             <p className="mt-0.5 text-xs text-slate-500">기간을 고르면 표와 PDF 미리보기가 같이 바뀝니다.</p>
           </div>
           <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" icon={<Share2 size={14} />} onClick={handleShare}>
+              공유
+            </Button>
             <Button size="sm" variant="outline" icon={<Eye size={14} />} onClick={() => setPreviewOpen(true)}>
               미리보기
             </Button>
@@ -271,6 +315,9 @@ export function TableTab({ site, trades, records }: Props) {
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="outline" onClick={() => setPreviewOpen(false)}>
             닫기
+          </Button>
+          <Button variant="outline" icon={<Share2 size={15} />} onClick={handleShare}>
+            요약 공유
           </Button>
           <Button icon={<Printer size={15} />} onClick={printReport}>
             PDF 저장

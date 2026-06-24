@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, Printer, Plus, Trash2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Printer, Plus, Trash2, Share2 } from 'lucide-react'
 import { useAppStore } from '@/stores/app-store'
 import { TopBar } from '@/components/layout/top-bar'
 import { Button, Card, Field, Segmented, Sheet, Stepper, TextInput, TradeDot } from '@/components/ui'
-import { addDays, cn, endOfMonth, fmtKShort, parseYmd, startOfMonth, wonFmt, wonShort, ymd } from '@/lib/utils'
+import { addDays, cn, endOfMonth, fmtKShort, parseYmd, startOfMonth, wonFmt, wonShort, ymd, shareText } from '@/lib/utils'
 import type { PaymentStatus, WorkerRecord, WorkerSite } from '@/lib/types'
 
 const TODAY = new Date()
@@ -170,6 +170,45 @@ export default function WorkerPage() {
         document.title = prevTitle
       }, 300)
     }, 50)
+  }
+
+  function handleShareReport() {
+    const siteLines = siteSummaries
+      .map(({ site, manDay, amount, paid, unpaid }) => {
+        let line = `- ${site.name}: ${manDay}공수 (${wonShort(amount)}원)`
+        if (reportMode === 'full') {
+          line += ` (지급 ${wonShort(paid)}원 / 미지급 ${wonShort(unpaid)}원)`
+        }
+        return line
+      })
+      .join('\n')
+
+    const summaryText = `[SiteLog 공수 정산 요약]
+구분: ${settlementMode === 'year' ? '연간 정산' : '월간 정산'}
+기간: ${settlementPeriodLabel}
+총 공수: ${settlementTotals.manDay}공수
+합산 금액: ${wonFmt(settlementTotals.amount)}원
+${reportMode === 'full' ? `- 지급 완료: ${wonFmt(settlementTotals.paid)}원\n- 미지급 금액: ${wonFmt(settlementTotals.unpaid)}원` : ''}
+
+현장별 내역:
+${siteLines || '기록 없음'}
+
+상세 내역은 SiteLog에서 확인하세요.`
+
+    shareText({
+      title: `${settlementPeriodLabel} 공수 정산 요약`,
+      text: summaryText,
+      onSuccess: (type) => {
+        if (type === 'share') {
+          flash('공유창을 열었습니다')
+        } else {
+          flash('정산 요약이 클립보드에 복사되었습니다')
+        }
+      },
+      onError: () => {
+        flash('공유하기에 실패했습니다')
+      },
+    })
   }
 
   const settlementPeriodLabel = settlementMode === 'year'
@@ -580,6 +619,9 @@ export default function WorkerPage() {
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="outline" onClick={() => setPreviewOpen(false)}>
             닫기
+          </Button>
+          <Button variant="outline" icon={<Share2 size={15} />} onClick={handleShareReport}>
+            요약 공유
           </Button>
           <Button icon={<Printer size={15} />} onClick={printSettlementReport}>
             PDF 저장

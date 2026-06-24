@@ -119,3 +119,47 @@ export function withEntry(
   }
   return { ...records, [key]: { ...prev, [tradeId]: entry } }
 }
+
+// ── Web Share & Clipboard Fallback ──────────────────────────────────────────
+
+export async function shareText({
+  title,
+  text,
+  url,
+  onSuccess,
+  onError,
+}: {
+  title: string
+  text: string
+  url?: string
+  onSuccess?: (type: 'share' | 'copy') => void
+  onError?: (error: unknown) => void
+}) {
+  if (typeof window === 'undefined') return
+
+  const shareData: ShareData = { title, text }
+  if (url) shareData.url = url
+
+  // Web Share API 지원 여부 및 공유 가능 여부 체크
+  if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+    try {
+      await navigator.share(shareData)
+      if (onSuccess) onSuccess('share')
+      return
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return
+      }
+    }
+  }
+
+  // Web Share API 미지원 또는 에러 시 Clipboard API로 복사 Fallback
+  try {
+    const copyText = url ? `${text}\n\n확인 링크: ${url}` : text
+    await navigator.clipboard.writeText(copyText)
+    if (onSuccess) onSuccess('copy')
+  } catch (err) {
+    if (onError) onError(err)
+  }
+}
+
