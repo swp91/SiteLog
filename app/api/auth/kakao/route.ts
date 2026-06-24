@@ -11,10 +11,12 @@ export async function POST(request: Request) {
 
     const clientId = process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID?.trim()
     const redirectUri = process.env.NEXT_PUBLIC_KAKAO_REDIRECT_URI?.trim()
+    const clientSecret = process.env.KAKAO_CLIENT_SECRET?.trim()
 
     console.log('--- Kakao Auth Debug ---')
     console.log('Client ID (len):', clientId?.length, `"${clientId}"`)
     console.log('Redirect URI:', redirectUri)
+    console.log('Client Secret Enabled:', !!clientSecret)
     console.log('------------------------')
 
     if (!clientId || !redirectUri) {
@@ -22,17 +24,23 @@ export async function POST(request: Request) {
     }
 
     // 1. 카카오 토큰 교환
+    const tokenParams: Record<string, string> = {
+      grant_type: 'authorization_code',
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      code,
+    }
+
+    if (clientSecret) {
+      tokenParams.client_secret = clientSecret
+    }
+
     const tokenResponse = await fetch('https://kauth.kakao.com/oauth/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
       },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        client_id: clientId,
-        redirect_uri: redirectUri,
-        code,
-      }),
+      body: new URLSearchParams(tokenParams),
     })
 
     if (!tokenResponse.ok) {
