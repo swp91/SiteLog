@@ -42,7 +42,7 @@ interface AppState {
   switchUserType: (type: UserType) => Promise<void>
   logout: () => Promise<void>
   fetchData: () => Promise<void>
-  updateProfile: (patch: { name: string; phone?: string }) => Promise<void>
+  updateProfile: (patch: { name: string; phone?: string; bank?: string; account?: string; holder?: string }) => Promise<void>
 
   // sites CRUD
   addSite: (site: Omit<Site, 'id'>) => Promise<void>
@@ -75,6 +75,11 @@ interface AppState {
   unsubscribes: (() => void)[]
   setupRealtimeListeners: () => void
   cleanupRealtimeListeners: () => void
+
+  // theme
+  theme: 'light' | 'dark'
+  initTheme: () => void
+  toggleTheme: () => void
 }
 
 const EMPTY_USER: AppUser = {
@@ -103,6 +108,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   toast: '',
   authInitialized: false,
   unsubscribes: [],
+  theme: 'light',
 
   login: async (email, pass) => {
     await signInWithEmailAndPassword(auth, email, pass)
@@ -454,7 +460,10 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     await updateDoc(doc(db, 'users', uid), {
       name: patch.name,
-      phone: patch.phone || ''
+      phone: patch.phone || '',
+      bank: patch.bank || '',
+      account: patch.account || '',
+      holder: patch.holder || ''
     })
 
     // Auth profile displayName 동기화
@@ -468,6 +477,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         name: patch.name,
         phone: patch.phone || '',
         avatar: patch.name ? patch.name[0] : s.user.avatar,
+        bank: patch.bank || '',
+        account: patch.account || '',
+        holder: patch.holder || ''
       },
     }))
   },
@@ -476,10 +488,42 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ toast: message })
     setTimeout(() => set({ toast: '' }), 1800)
   },
+
+  initTheme: () => {
+    if (typeof window === 'undefined') return
+    const saved = localStorage.getItem('sitelog_theme') as 'light' | 'dark' | null
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    const initialTheme = saved || (prefersDark ? 'dark' : 'light')
+    
+    set({ theme: initialTheme })
+    
+    if (initialTheme === 'dark') {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  },
+
+  toggleTheme: () => {
+    const nextTheme = get().theme === 'light' ? 'dark' : 'light'
+    set({ theme: nextTheme })
+    
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sitelog_theme', nextTheme)
+      if (nextTheme === 'dark') {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+    }
+  },
 }))
 
 // SSR이 아닌 브라우저 환경에서 Firebase Auth 실시간 리스너 작동 (유지보수성 향상)
 if (typeof window !== 'undefined') {
+  // 테마 초기화 즉시 기동 (FOUC 깜빡임 최소화)
+  useAppStore.getState().initTheme()
+
   onAuthStateChanged(auth, async (firebaseUser) => {
     if (firebaseUser) {
       try {
@@ -500,6 +544,9 @@ if (typeof window !== 'undefined') {
             phone: data.phone || '',
             company: data.company || '',
             joined: data.joined || '',
+            bank: data.bank || '',
+            account: data.account || '',
+            holder: data.holder || '',
           }
         } else {
           // 데이터베이스 미생성 당시 꼬였던 불완전 가입 계정 자동 복구

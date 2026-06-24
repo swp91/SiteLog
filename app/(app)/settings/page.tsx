@@ -20,6 +20,9 @@ export default function SettingsPage() {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editName, setEditName] = useState('')
   const [editPhone, setEditPhone] = useState('')
+  const [editBank, setEditBank] = useState('')
+  const [editAccount, setEditAccount] = useState('')
+  const [editHolder, setEditHolder] = useState('')
   const [saving, setSaving] = useState(false)
 
   const totalEntries = Object.keys(records).length
@@ -41,6 +44,9 @@ export default function SettingsPage() {
   function handleOpenEdit() {
     setEditName(user.name)
     setEditPhone(user.phone || '')
+    setEditBank(user.bank || '')
+    setEditAccount(user.account || '')
+    setEditHolder(user.holder || '')
     setIsEditOpen(true)
   }
 
@@ -55,6 +61,9 @@ export default function SettingsPage() {
       await updateProfile({
         name: editName.trim(),
         phone: editPhone.trim() || undefined,
+        bank: editBank.trim(),
+        account: editAccount.trim(),
+        holder: editHolder.trim(),
       })
       flash('프로필이 수정되었습니다.')
       setIsEditOpen(false)
@@ -118,10 +127,11 @@ export default function SettingsPage() {
 
       {/* Account */}
       <p className="text-xs font-semibold text-slate-400 px-1 mb-2">계정</p>
-      <Card className="mb-5 divide-y divide-slate-100 !p-0">
+      <Card className="mb-5 divide-y divide-slate-100 dark:divide-slate-800 !p-0">
         {[
           { label: '이메일', value: user.email },
           { label: '휴대폰', value: user.phone ?? '미등록' },
+          { label: '입금 계좌', value: user.bank && user.account ? `${user.bank} ${user.account} (${user.holder})` : '미등록' },
           { label: '비밀번호 변경', value: '' },
           { label: '카카오 연결', value: '미연결' },
         ].map(({ label, value }) => (
@@ -190,6 +200,27 @@ export default function SettingsPage() {
               placeholder="휴대폰 번호 (예: 010-1234-5678)"
               value={editPhone}
               onChange={(e) => setEditPhone(e.target.value)}
+            />
+          </Field>
+          <Field label="입금 은행">
+            <TextInput
+              placeholder="예: 국민은행"
+              value={editBank}
+              onChange={(e) => setEditBank(e.target.value)}
+            />
+          </Field>
+          <Field label="계좌 번호">
+            <TextInput
+              placeholder="계좌 번호를 입력하세요"
+              value={editAccount}
+              onChange={(e) => setEditAccount(e.target.value)}
+            />
+          </Field>
+          <Field label="예금주">
+            <TextInput
+              placeholder="예금주명을 입력하세요"
+              value={editHolder}
+              onChange={(e) => setEditHolder(e.target.value)}
             />
           </Field>
           <div className="flex gap-3 mt-4">

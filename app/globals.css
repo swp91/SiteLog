@@ -11,8 +11,7 @@
 
   body {
     font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-    color: #0F172A;
-    background-color: #F8FAFC;
+    @apply text-slate-900 bg-slate-50 dark:text-slate-100 dark:bg-slate-950 transition-colors duration-200;
     -webkit-font-smoothing: antialiased;
   }
 
@@ -168,6 +167,21 @@
   outline: none;
   border-color: #2563eb;
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.3);
+}
+
+/* 다크모드 전용 에디터 & 뷰어 상세 스타일 */
+.dark .editor-content h2, .dark .journal-content h2 {
+  color: #F1F5F9;
+}
+.dark .editor-content h3, .dark .journal-content h3 {
+  color: #E2E8F0;
+}
+.dark .editor-content blockquote, .dark .journal-content blockquote {
+  border-left-color: #475569;
+  color: #94A3B8;
+}
+.dark .editor-content:empty::before {
+  color: #475569;
 }
 
 

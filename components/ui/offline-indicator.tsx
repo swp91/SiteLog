@@ -2,6 +2,72 @@
 
 import { useEffect, useState } from 'react'
 import { WifiOff } from 'lucide-react'
+import { idbKeys, idbGet, idbDel } from '@/lib/idb'
+import { useAppStore } from '@/stores/app-store'
+import { storage } from '@/lib/firebase'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+
+// 오프라인 상태에서 IndexedDB에 쌓였던 임시 이미지들을 백그라운드에서 Storage로 업로드하고 본문을 치환하는 동기화 매니저
+async function syncPendingImages() {
+  if (typeof window === 'undefined' || !navigator.onLine) return
+
+  try {
+    const keys = await idbKeys()
+    const pendingKeys = keys.filter((k) => k.startsWith('pending-image-'))
+    
+    if (pendingKeys.length === 0) return
+
+    const flash = useAppStore.getState().flash
+    let successCount = 0
+
+    for (const key of pendingKeys) {
+      try {
+        const data = await idbGet(key)
+        if (!data || !data.blob || !data.userId || !data.fileName) {
+          await idbDel(key)
+          continue
+        }
+
+        // 1. Storage에 실제 이미지 업로드
+        const storageRef = ref(storage, `journals/${data.userId}/${data.fileName}`)
+        await uploadBytes(storageRef, data.blob)
+        const downloadUrl = await getDownloadURL(storageRef)
+
+        // 2. Zustand 스토어 상태를 순회하며 임시 주소(local-pending://{id})가 들어간 일지 업데이트
+        const { journals, setJournal } = useAppStore.getState()
+        const pendingPlaceholder = `local-pending://${data.id}`
+
+        for (const [docKey, journal] of Object.entries(journals)) {
+          const body = journal.body || journal.memo || ''
+          if (body.includes(pendingPlaceholder)) {
+            const updatedBody = body.replaceAll(pendingPlaceholder, downloadUrl)
+            const [siteId, dateStr] = docKey.split('|')
+            if (siteId && dateStr) {
+              await setJournal(siteId, dateStr, {
+                body: updatedBody,
+                photos: journal.photos?.map((photo) =>
+                  photo.url === pendingPlaceholder ? { ...photo, url: downloadUrl } : photo
+                ) ?? []
+              })
+            }
+          }
+        }
+
+        // 3. 임시 파일 영구 삭제
+        await idbDel(key)
+        successCount++
+      } catch (err) {
+        console.error('Error syncing pending image:', err)
+      }
+    }
+
+    if (successCount > 0) {
+      flash(`오프라인 작성 사진 ${successCount}장이 클라우드에 자동 동기화되었습니다.`)
+    }
+  } catch (e) {
+    console.error('Failed to run background image sync:', e)
+  }
+}
 
 export function OfflineIndicator() {
   const [isOnline, setIsOnline] = useState(true)
@@ -15,6 +81,8 @@ export function OfflineIndicator() {
 
     const handleOnline = () => {
       setIsOnline(true)
+      // 백그라운드 동기화 구동
+      syncPendingImages()
       // 온라인 상태 복구 시 3초 후에 배너를 숨김
       setTimeout(() => {
         setIsVisible(false)
@@ -46,6 +114,9 @@ export function OfflineIndicator() {
     // 만약 최초 로드 시 이미 오프라인 상태라면 즉시 표시
     if (!navigator.onLine) {
       setIsVisible(true)
+    } else {
+      // 최초 마운트 시 온라인 상태라면 잔여 대기 이미지 동기화 1회 체크
+      syncPendingImages()
     }
 
     return () => {

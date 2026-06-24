@@ -4,8 +4,10 @@ import Link from 'next/link'
 import { useAppStore } from '@/stores/app-store'
 import { TopBar } from '@/components/layout/top-bar'
 import { Card, Badge, TradeDot } from '@/components/ui'
-import { dayTotal, dayEntries, allSitesDayTotal, ymd, addDays, fmtKShort, wonShort } from '@/lib/utils'
+import { dayTotal, dayEntries, allSitesDayTotal, ymd, addDays, fmtKShort, wonShort, wonFmt } from '@/lib/utils'
 import type { SiteStatus } from '@/lib/types'
+import { useMemo } from 'react'
+import { DonutChart, AreaChart, ProgressBar } from '@/components/ui/svg-charts'
 
 const TODAY = new Date()
 TODAY.setHours(0, 0, 0, 0)
@@ -19,6 +21,70 @@ const statusTone: Record<SiteStatus, 'blue' | 'amber' | 'slate'> = {
 
 export default function DashboardPage() {
   const { user, sites, trades, records } = useAppStore()
+
+  // 1. 최근 7일 일별 총 출근 노무비 계산 (AreaChart용)
+  const last7Costs = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = addDays(TODAY, i - 6)
+      const dateStr = ymd(d)
+      let dayCostSum = 0
+
+      for (const site of sites) {
+        const entries = dayEntries(records, site.id, dateStr)
+        for (const [tid, entry] of Object.entries(entries)) {
+          const trade = trades.find((t) => t.id === tid)
+          if (trade && entry.count > 0) {
+            dayCostSum += entry.count * trade.rate
+          }
+        }
+      }
+      return {
+        label: fmtKShort(d),
+        value: dayCostSum
+      }
+    })
+  }, [records, sites, trades])
+
+  // 2. 공종별 누적 노무비 점유율 계산 (DonutChart용)
+  const tradeShareData = useMemo(() => {
+    const shares = trades.map((trade) => {
+      let tradeCost = 0
+      for (const dayRec of Object.values(records)) {
+        const entry = dayRec[trade.id]
+        if (entry && entry.count > 0) {
+          tradeCost += entry.count * trade.rate
+        }
+      }
+      return {
+        label: trade.name,
+        value: tradeCost,
+        color: trade.color
+      }
+    }).filter((item) => item.value > 0)
+
+    return shares.sort((a, b) => b.value - a.value)
+  }, [records, trades])
+
+  // 3. 현장별 누적 투입 인건비 계산 (ProgressBar용)
+  const siteCosts = useMemo(() => {
+    return sites.map((site) => {
+      let siteCost = 0
+      for (const [key, dayRec] of Object.entries(records)) {
+        if (key.startsWith(`${site.id}|`)) {
+          for (const [tid, entry] of Object.entries(dayRec)) {
+            const trade = trades.find((t) => t.id === tid)
+            if (trade && entry.count > 0) {
+              siteCost += entry.count * trade.rate
+            }
+          }
+        }
+      }
+      return {
+        site,
+        cost: siteCost
+      }
+    }).filter((item) => item.cost > 0).sort((a, b) => b.cost - a.cost)
+  }, [records, sites, trades])
 
   const hour = TODAY.getHours()
   const greeting = hour < 12 ? '좋은 아침이에요' : hour < 18 ? '안녕하세요' : '수고하셨어요'
@@ -83,6 +149,52 @@ export default function DashboardPage() {
             })}
           </div>
         </Card>
+      </div>
+
+      {/* 종합 상황판 통계 시각화 섹션 */}
+      <h2 className="text-[0.9375rem] font-bold text-ink dark:text-white mb-3 mt-6">현장 종합 상황판</h2>
+      <div className="grid wide:grid-cols-2 gap-4 mb-6">
+        {/* 최근 7일 노무비 누적 추이 */}
+        <Card className="p-5 flex flex-col gap-3">
+          <div>
+            <p className="text-[0.8125rem] font-semibold text-slate-500">최근 7일 일별 인건비 추이</p>
+            <p className="text-xs text-slate-400 mt-0.5">매일 현장에 투입된 공종별 일당의 합산 금액입니다.</p>
+          </div>
+          <div className="pt-2">
+            <AreaChart data={last7Costs} />
+          </div>
+        </Card>
+
+        {/* 공종별 인건비 점유율 */}
+        <Card className="p-5 flex flex-col gap-3">
+          <div>
+            <p className="text-[0.8125rem] font-semibold text-slate-500">공종별 누적 인건비 비율</p>
+            <p className="text-xs text-slate-400 mt-0.5">전체 현장에 누적 투입된 공종별 총비용 점유율입니다.</p>
+          </div>
+          <div className="pt-2">
+            <DonutChart data={tradeShareData} />
+          </div>
+        </Card>
+
+        {/* 현장별 자금 소진 상황 */}
+        {siteCosts.length > 0 && (
+          <Card className="p-5 wide:col-span-2 flex flex-col gap-4">
+            <div>
+              <p className="text-[0.8125rem] font-semibold text-slate-500">현장별 투입 인건비 현황</p>
+              <p className="text-xs text-slate-400 mt-0.5">각 현장별로 누적 투입된 총 인건비 소진 상태입니다.</p>
+            </div>
+            <div className="flex flex-col gap-4">
+              {siteCosts.slice(0, 5).map(({ site, cost }) => (
+                <ProgressBar
+                  key={site.id}
+                  label={site.name}
+                  value={cost}
+                  max={Math.max(...siteCosts.map((s) => s.cost), 1)}
+                />
+              ))}
+            </div>
+          </Card>
+        )}
       </div>
 
       {/* Site cards */}

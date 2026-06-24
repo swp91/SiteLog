@@ -183,12 +183,20 @@ export default function WorkerPage() {
       })
       .join('\n')
 
-    const summaryText = `[SiteLog 공수 정산 요약]
+    const user = useAppStore.getState().user
+    const hasAccount = !!(user.bank && user.account && user.holder)
+    const accountLine = hasAccount
+      ? `\n입금 계좌: ${user.bank} ${user.account} (${user.holder})`
+      : `\n(※ 설정에서 입금 계좌를 등록하시면 청구서 양식이 자동 결합됩니다.)`
+
+    const summaryText = `[SiteLog 공수 정산 청구서]
 구분: ${settlementMode === 'year' ? '연간 정산' : '월간 정산'}
 기간: ${settlementPeriodLabel}
+청구 금액: ${wonFmt(settlementTotals.unpaid)}원 (총 ${wonFmt(settlementTotals.amount)}원)
 총 공수: ${settlementTotals.manDay}공수
-합산 금액: ${wonFmt(settlementTotals.amount)}원
-${reportMode === 'full' ? `- 지급 완료: ${wonFmt(settlementTotals.paid)}원\n- 미지급 금액: ${wonFmt(settlementTotals.unpaid)}원` : ''}
+- 지급 완료: ${wonFmt(settlementTotals.paid)}원
+- 미지급 금액: ${wonFmt(settlementTotals.unpaid)}원
+${accountLine}
 
 현장별 내역:
 ${siteLines || '기록 없음'}
@@ -196,13 +204,13 @@ ${siteLines || '기록 없음'}
 상세 내역은 SiteLog에서 확인하세요.`
 
     shareText({
-      title: `${settlementPeriodLabel} 공수 정산 요약`,
+      title: `${settlementPeriodLabel} 공수 정산 청구서`,
       text: summaryText,
       onSuccess: (type) => {
         if (type === 'share') {
-          flash('공유창을 열었습니다')
+          flash('청구서 공유창을 열었습니다')
         } else {
-          flash('정산 요약이 클립보드에 복사되었습니다')
+          flash('청구서 요약이 클립보드에 복사되었습니다')
         }
       },
       onError: () => {

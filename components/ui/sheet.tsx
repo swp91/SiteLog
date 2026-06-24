@@ -33,16 +33,16 @@ export function Sheet({ open, onClose, title, maxWidth = '480px', children }: Sh
       {/* Panel */}
       <div
         className={cn(
-          'relative w-full bg-white rounded-t-xl wide:rounded-xl shadow-lg',
+          'relative w-full bg-white dark:bg-slate-900 rounded-t-xl wide:rounded-xl shadow-lg dark:border dark:border-slate-800/80',
           'animate-[slideUp_.26s_cubic-bezier(.16,1,.3,1)]',
         )}
         style={{ maxWidth }}
       >
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-slate-100">
-          {title && <h2 className="text-base font-bold text-ink">{title}</h2>}
+        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800/80">
+          {title && <h2 className="text-base font-bold text-ink dark:text-white">{title}</h2>}
           <button
             onClick={onClose}
-            className="ml-auto w-8 h-8 flex items-center justify-center rounded-sm text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+            className="ml-auto w-8 h-8 flex items-center justify-center rounded-sm text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300 transition-colors"
           >
             <X size={18} />
           </button>

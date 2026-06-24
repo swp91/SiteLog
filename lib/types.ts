@@ -62,6 +62,9 @@ export interface AppUser {
   phone?: string
   company?: string
   joined?: string
+  bank?: string
+  account?: string
+  holder?: string
 }
 
 export interface WorkerSite {

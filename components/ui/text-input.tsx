@@ -18,10 +18,10 @@ export function TextInput({ icon, className, ...props }: TextInputProps) {
       <input
         {...props}
         className={cn(
-          'w-full h-11 px-3 rounded-sm border border-slate-200 bg-white',
-          'text-[0.9375rem] text-ink placeholder:text-slate-400',
-          'outline-none focus:border-blue-600 focus:ring-[3px] focus:ring-blue-100',
-          'transition-colors',
+          'w-full h-11 px-3 rounded-sm border border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-800 dark:text-white',
+          'text-[0.9375rem] text-ink placeholder:text-slate-400 dark:placeholder:text-slate-600',
+          'outline-none focus:border-blue-600 focus:ring-[3px] focus:ring-blue-100 dark:focus:ring-blue-950/40',
+          'transition-colors duration-200',
           icon && 'pl-10',
           className,
         )}
@@ -40,9 +40,9 @@ interface FieldProps {
 export function Field({ label, hint, children, className }: FieldProps) {
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
-      {label && <label className="text-[0.8125rem] font-semibold text-slate-700">{label}</label>}
+      {label && <label className="text-[0.8125rem] font-semibold text-slate-700 dark:text-slate-300">{label}</label>}
       {children}
-      {hint && <p className="text-xs text-slate-400">{hint}</p>}
+      {hint && <p className="text-xs text-slate-400 dark:text-slate-500">{hint}</p>}
     </div>
   )
 }

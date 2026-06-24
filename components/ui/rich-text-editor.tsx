@@ -18,6 +18,7 @@ import {
 import { useAppStore } from '@/stores/app-store'
 import { storage } from '@/lib/firebase'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { idbSet, localUrlCache, restorePendingImagesSync, convertToPendingPlaceholders, restorePendingImagesAsync } from '@/lib/idb'
 
 
 interface RichTextEditorProps {
@@ -81,15 +82,27 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
   const [toolbarCoords, setToolbarCoords] = useState<{ top: number; left: number } | null>(null)
   const [uploading, setUploading] = useState(false)
 
-  // 외부 변경 동기화 (에디터 내 포커스가 없고 값이 다를 때만 갱신)
+  // 외부 변경 동기화 및 오프라인 이미지 복원
   useEffect(() => {
     if (editorRef.current) {
       const editorHTML = editorRef.current.innerHTML
       const normalizedValue = value === '' ? '' : value
+      
+      // 1. 동기식 메모리 캐시 복원 적용
+      const restoredValue = restorePendingImagesSync(normalizedValue)
       const normalizedEditor = editorHTML === '<p><br></p>' || editorHTML === '<br>' ? '' : editorHTML
       
-      if (normalizedEditor !== normalizedValue) {
-        editorRef.current.innerHTML = value || '<p><br></p>'
+      if (normalizedEditor !== restoredValue) {
+        editorRef.current.innerHTML = restoredValue || '<p><br></p>'
+      }
+
+      // 2. 비동기식 IndexedDB 이미지 복원 적용 (새로고침 시 대응)
+      if (normalizedValue.includes('local-pending://')) {
+        restorePendingImagesAsync(normalizedValue).then((fullyRestored) => {
+          if (editorRef.current && editorRef.current.innerHTML !== fullyRestored) {
+            editorRef.current.innerHTML = fullyRestored
+          }
+        })
       }
     }
   }, [value])
@@ -129,27 +142,52 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
         try {
           // WebP 변환 및 리사이징 압축 (Blob 반환)
           const webpBlob = await compressAndConvertToWebpBlob(file)
+          const id = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
 
-          // Firebase Storage 업로드
-          const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.webp`
-          const storageRef = ref(storage, `journals/${userId}/${fileName}`)
-          await uploadBytes(storageRef, webpBlob)
-          const downloadUrl = await getDownloadURL(storageRef)
+          if (!navigator.onLine) {
+            // [오프라인 대응] IndexedDB 및 메모리 캐시 적재
+            const localUrl = URL.createObjectURL(webpBlob)
+            localUrlCache.set(id, localUrl)
 
-          if (typeof document !== 'undefined') {
-            editorRef.current?.focus()
-            document.execCommand('insertImage', false, downloadUrl)
+            await idbSet(`pending-image-${id}`, {
+              id,
+              blob: webpBlob,
+              userId,
+              fileName: `${id}.webp`,
+              timestamp: Date.now()
+            })
+
+            if (typeof document !== 'undefined') {
+              editorRef.current?.focus()
+              document.execCommand('insertImage', false, localUrl)
+            }
+            flash('오프라인 상태입니다. 이미지는 기기에 임시 보관되며 연결 시 자동 저장됩니다.')
+          } else {
+            // [온라인 대응] Firebase Storage 즉시 업로드
+            const fileName = `${id}.webp`
+            const storageRef = ref(storage, `journals/${userId}/${fileName}`)
+            await uploadBytes(storageRef, webpBlob)
+            const downloadUrl = await getDownloadURL(storageRef)
+
+            if (typeof document !== 'undefined') {
+              editorRef.current?.focus()
+              document.execCommand('insertImage', false, downloadUrl)
+            }
           }
         } catch (err) {
           console.error('Image upload/compression error:', err)
-          flash('이미지 업로드에 실패했습니다.')
+          flash('이미지 처리 중 오류가 발생했습니다.')
         }
       }
     } finally {
       setUploading(false)
       e.target.value = ''
-      handleInput()
+      handleImageChangeInput()
     }
+  }
+
+  const handleImageChangeInput = () => {
+    handleInput()
   }
 
   const handleEditorClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -214,7 +252,9 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
       if (html === '<p><br></p>' || html === '<br>' || html.trim() === '') {
         html = ''
       }
-      onChange(html)
+      // 부모 컴포넌트로 내보낼 때는 blob URL을 local-pending://{id} 로 치환
+      const storageHtml = convertToPendingPlaceholders(html)
+      onChange(storageHtml)
     }
   }
 

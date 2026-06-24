@@ -19,7 +19,7 @@ export function Segmented({ value, onChange, options, full, className }: Segment
   return (
     <div
       className={cn(
-        'inline-flex p-1 bg-slate-100 rounded-sm',
+        'inline-flex p-1 bg-slate-100 dark:bg-slate-800/80 rounded-sm transition-colors duration-200',
         full && 'w-full',
         className,
       )}
@@ -31,8 +31,8 @@ export function Segmented({ value, onChange, options, full, className }: Segment
           className={cn(
             'flex-1 h-8 px-3 rounded-xs text-[0.8125rem] font-semibold transition-all whitespace-nowrap',
             value === opt.value
-              ? 'bg-white text-blue-600 shadow-sm'
-              : 'text-slate-500 hover:text-slate-700',
+              ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
+              : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200',
           )}
         >
           {opt.label}
