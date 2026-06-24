@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
+import { getStorage } from 'firebase/storage'
 import { 
   getFirestore, 
   initializeFirestore, 
@@ -43,3 +44,4 @@ if (typeof window !== 'undefined') {
 }
 
 export const db = firestoreDb
+export const storage = getStorage(app)

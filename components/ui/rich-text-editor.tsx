@@ -16,6 +16,9 @@ import {
   Type
 } from 'lucide-react'
 import { useAppStore } from '@/stores/app-store'
+import { storage } from '@/lib/firebase'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+
 
 interface RichTextEditorProps {
   value: string
@@ -23,8 +26,8 @@ interface RichTextEditorProps {
   placeholder?: string
 }
 
-// 브라우저 Canvas API를 사용한 WebP 변환 및 이미지 압축 헬퍼
-function compressAndConvertToWebp(file: File, maxWidth = 1200, quality = 0.75): Promise<string> {
+// 브라우저 Canvas API를 사용한 WebP 변환 및 이미지 압축 헬퍼 (Blob 반환)
+function compressAndConvertToWebpBlob(file: File, maxWidth = 1200, quality = 0.75): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = (event) => {
@@ -49,8 +52,17 @@ function compressAndConvertToWebp(file: File, maxWidth = 1200, quality = 0.75): 
         }
 
         ctx.drawImage(img, 0, 0, width, height)
-        const webpDataUrl = canvas.toDataURL('image/webp', quality)
-        resolve(webpDataUrl)
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob)
+            } else {
+              reject(new Error('Canvas toBlob conversion failed'))
+            }
+          },
+          'image/webp',
+          quality
+        )
       }
       img.onerror = (err) => reject(err)
       img.src = event.target?.result as string
@@ -60,12 +72,14 @@ function compressAndConvertToWebp(file: File, maxWidth = 1200, quality = 0.75): 
   })
 }
 
+
 export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [activeFormats, setActiveFormats] = useState<string[]>([])
   const [selectedImage, setSelectedImage] = useState<HTMLImageElement | null>(null)
   const [toolbarCoords, setToolbarCoords] = useState<{ top: number; left: number } | null>(null)
+  const [uploading, setUploading] = useState(false)
 
   // 외부 변경 동기화 (에디터 내 포커스가 없고 값이 다를 때만 갱신)
   useEffect(() => {
@@ -97,32 +111,45 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
     if (!files || files.length === 0) return
 
     const flash = useAppStore.getState().flash
+    const user = useAppStore.getState().user
+    const userId = user.id || 'anonymous'
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i]
+    setUploading(true)
 
-      // GIF 제외 처리
-      if (file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif')) {
-        flash('GIF 이미지는 업로드할 수 없습니다.')
-        continue
-      }
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
 
-      try {
-        // WebP 변환 및 리사이징 압축
-        const dataUrl = await compressAndConvertToWebp(file)
-
-        if (typeof document !== 'undefined') {
-          editorRef.current?.focus()
-          document.execCommand('insertImage', false, dataUrl)
+        // GIF 제외 처리
+        if (file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif')) {
+          flash('GIF 이미지는 업로드할 수 없습니다.')
+          continue
         }
-      } catch (err) {
-        console.error('Image compression error:', err)
-        flash('이미지 압축에 실패했습니다.')
-      }
-    }
 
-    e.target.value = ''
-    handleInput()
+        try {
+          // WebP 변환 및 리사이징 압축 (Blob 반환)
+          const webpBlob = await compressAndConvertToWebpBlob(file)
+
+          // Firebase Storage 업로드
+          const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.webp`
+          const storageRef = ref(storage, `journals/${userId}/${fileName}`)
+          await uploadBytes(storageRef, webpBlob)
+          const downloadUrl = await getDownloadURL(storageRef)
+
+          if (typeof document !== 'undefined') {
+            editorRef.current?.focus()
+            document.execCommand('insertImage', false, downloadUrl)
+          }
+        } catch (err) {
+          console.error('Image upload/compression error:', err)
+          flash('이미지 업로드에 실패했습니다.')
+        }
+      }
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+      handleInput()
+    }
   }
 
   const handleEditorClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -220,6 +247,13 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
 
   return (
     <div className="relative flex flex-col rounded border border-slate-200 bg-white overflow-hidden focus-within:border-blue-600 focus-within:ring-[3px] focus-within:ring-blue-100 transition-colors">
+      {/* 이미지 업로드 로딩 오버레이 */}
+      {uploading && (
+        <div className="absolute inset-0 bg-white/75 backdrop-blur-[1px] flex flex-col items-center justify-center gap-3 z-50 select-none">
+          <div className="w-8 h-8 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin" />
+          <p className="text-xs font-semibold text-blue-600 animate-pulse">이미지를 안전하게 업로드하는 중입니다...</p>
+        </div>
+      )}
       {/* 툴바 */}
       <div className="flex items-center gap-1 p-1.5 border-b border-slate-100 bg-slate-50 overflow-x-auto shrink-0 select-none scrollbar-none">
         <button
