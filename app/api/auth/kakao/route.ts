@@ -9,8 +9,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Authorization code is required' }, { status: 400 })
     }
 
-    const clientId = process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID
-    const redirectUri = process.env.NEXT_PUBLIC_KAKAO_REDIRECT_URI
+    const clientId = process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID?.trim()
+    const redirectUri = process.env.NEXT_PUBLIC_KAKAO_REDIRECT_URI?.trim()
+
+    console.log('--- Kakao Auth Debug ---')
+    console.log('Client ID (len):', clientId?.length, `"${clientId}"`)
+    console.log('Redirect URI:', redirectUri)
+    console.log('------------------------')
 
     if (!clientId || !redirectUri) {
       return NextResponse.json({ error: 'Kakao environment variables are not configured' }, { status: 500 })
