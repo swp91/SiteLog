@@ -19,7 +19,8 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
-  collection
+  collection,
+  onSnapshot
 } from 'firebase/firestore'
 
 interface AppState {
@@ -69,6 +70,11 @@ interface AppState {
 
   // toast
   flash: (message: string) => void
+
+  // realtime listeners
+  unsubscribes: (() => void)[]
+  setupRealtimeListeners: () => void
+  cleanupRealtimeListeners: () => void
 }
 
 const EMPTY_USER: AppUser = {
@@ -96,6 +102,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   workerRecords: [],
   toast: '',
   authInitialized: false,
+  unsubscribes: [],
 
   login: async (email, pass) => {
     await signInWithEmailAndPassword(auth, email, pass)
@@ -136,10 +143,94 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   logout: async () => {
+    get().cleanupRealtimeListeners()
     if (typeof window !== 'undefined') {
       localStorage.removeItem('sitelog_user_hint')
     }
     await signOut(auth)
+  },
+
+  setupRealtimeListeners: () => {
+    const uid = get().user.id
+    if (!uid) return
+
+    get().cleanupRealtimeListeners()
+
+    const unsubs: (() => void)[] = []
+
+    try {
+      const sitesUnsub = onSnapshot(collection(db, 'users', uid, 'sites'), (snapshot) => {
+        const sitesList: Site[] = []
+        snapshot.forEach((d) => {
+          sitesList.push({ id: d.id, ...d.data() } as Site)
+        })
+        set({ sites: sitesList })
+      }, (err) => console.error('Sites sync error:', err))
+      unsubs.push(sitesUnsub)
+
+      const tradesUnsub = onSnapshot(collection(db, 'users', uid, 'trades'), (snapshot) => {
+        const tradesList: Trade[] = []
+        snapshot.forEach((d) => {
+          tradesList.push({ id: d.id, ...d.data() } as Trade)
+        })
+        set({ trades: tradesList })
+      }, (err) => console.error('Trades sync error:', err))
+      unsubs.push(tradesUnsub)
+
+      const recordsUnsub = onSnapshot(collection(db, 'users', uid, 'records'), (snapshot) => {
+        const recordsObj: Records = {}
+        snapshot.forEach((d) => {
+          recordsObj[d.id] = d.data() as DayRecord
+        })
+        set({ records: recordsObj })
+      }, (err) => console.error('Records sync error:', err))
+      unsubs.push(recordsUnsub)
+
+      const journalsUnsub = onSnapshot(collection(db, 'users', uid, 'journals'), (snapshot) => {
+        const journalsObj: Journals = {}
+        snapshot.forEach((d) => {
+          journalsObj[d.id] = d.data() as Journal
+        })
+        set({ journals: journalsObj })
+      }, (err) => console.error('Journals sync error:', err))
+      unsubs.push(journalsUnsub)
+
+      const workerSitesUnsub = onSnapshot(collection(db, 'users', uid, 'workerSites'), (snapshot) => {
+        const workerSitesList: WorkerSite[] = []
+        snapshot.forEach((d) => {
+          workerSitesList.push({ id: d.id, ...d.data() } as WorkerSite)
+        })
+        set({ workerSites: workerSitesList })
+      }, (err) => console.error('WorkerSites sync error:', err))
+      unsubs.push(workerSitesUnsub)
+
+      const workerRecordsUnsub = onSnapshot(collection(db, 'users', uid, 'workerRecords'), (snapshot) => {
+        const workerRecordsList: WorkerRecord[] = []
+        snapshot.forEach((d) => {
+          workerRecordsList.push({ id: d.id, ...d.data() } as WorkerRecord)
+        })
+        set({ workerRecords: workerRecordsList })
+      }, (err) => console.error('WorkerRecords sync error:', err))
+      unsubs.push(workerRecordsUnsub)
+
+      set({ unsubscribes: unsubs })
+    } catch (e) {
+      console.error('Error setting up realtime listeners:', e)
+    }
+  },
+
+  cleanupRealtimeListeners: () => {
+    const unsubs = get().unsubscribes
+    if (unsubs && unsubs.length > 0) {
+      unsubs.forEach((unsub) => {
+        try {
+          unsub()
+        } catch (e) {
+          console.error('Error unsubscribing listener:', e)
+        }
+      })
+    }
+    set({ unsubscribes: [] })
   },
 
   fetchData: async () => {
@@ -444,8 +535,8 @@ if (typeof window !== 'undefined') {
           localStorage.setItem('sitelog_user_hint', JSON.stringify(userData))
         }
         
-        // 2. 데이터 실시간 로드를 수행합니다 (get().user.id가 존재하게 됨).
-        await useAppStore.getState().fetchData()
+        // 2. 실시간 동기화 리스너를 실행합니다.
+        useAppStore.getState().setupRealtimeListeners()
 
         // 3. 로딩이 완료되었음을 설정합니다.
         useAppStore.setState({
@@ -458,6 +549,7 @@ if (typeof window !== 'undefined') {
         })
       }
     } else {
+      useAppStore.getState().cleanupRealtimeListeners()
       if (typeof window !== 'undefined') {
         localStorage.removeItem('sitelog_user_hint')
       }
