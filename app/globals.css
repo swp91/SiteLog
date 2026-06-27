@@ -87,6 +87,24 @@
     -webkit-print-color-adjust: exact;
   }
 
+  .report-page {
+    display: block;
+  }
+
+  .report-sheet {
+    width: 100%;
+    min-height: 180mm;
+    break-after: page;
+    page-break-after: always;
+    box-shadow: none !important;
+  }
+
+  .report-sheet:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .report-sheet,
   .report-month {
     break-inside: avoid;
     page-break-inside: avoid;

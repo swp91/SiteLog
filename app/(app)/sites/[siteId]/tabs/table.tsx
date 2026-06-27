@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState } from 'react'
 import { Download, Eye, Printer, Share2 } from 'lucide-react'
 import { Button, Segmented, Sheet, TradeDot, TextInput } from '@/components/ui'
 import { ymd, addDays, fmtKShort, parseYmd, startOfMonth, endOfMonth, dayEntries, shareText } from '@/lib/utils'
@@ -218,7 +218,6 @@ ${tradeLines || '내역 없음'}
       totalForDays={totalForDays}
       activeTradesForDays={activeTradesForDays}
       grandTotal={grandTotal}
-      summaryBoard={summaryBoard}
     />
   )
 
@@ -342,7 +341,6 @@ interface ReportPreviewProps {
   totalForDays: (targetDays: Date[]) => number
   activeTradesForDays: (targetDays: Date[]) => Trade[]
   grandTotal: number
-  summaryBoard: ReactNode
 }
 
 function ReportPreview({
@@ -360,26 +358,92 @@ function ReportPreview({
 }: ReportPreviewProps) {
   const cumulativeTrades = [...trades].sort((a, b) => tradeTotal(b.id) - tradeTotal(a.id))
   const maxMonthTotal = Math.max(...monthGroups.map((group) => totalForDays(group.days)), 1)
+  const maxDay = days.reduce(
+    (max, day) => {
+      const total = dayColTotal(day)
+      return total > max.total ? { day, total } : max
+    },
+    { day: days[0], total: 0 },
+  )
 
   return (
-    <section className="report-page rounded-xl bg-slate-50 p-6 text-ink">
-      <div className="mb-6 flex items-start justify-between gap-6">
+    <section className="report-page space-y-4 text-ink">
+      <ReportSummaryPage
+        siteName={siteName}
+        period={period}
+        days={days}
+        trades={cumulativeTrades}
+        monthGroups={monthGroups}
+        grandTotal={grandTotal}
+        maxDay={maxDay}
+        maxMonthTotal={maxMonthTotal}
+        tradeTotal={tradeTotal}
+        totalForDays={totalForDays}
+      />
+
+      <div className="space-y-4">
+        {monthGroups.map((group) => (
+          <MonthlyCalendarPage
+            key={group.key}
+            siteName={siteName}
+            group={group}
+            trades={activeTradesForDays(group.days)}
+            getCount={getCount}
+            dayColTotal={dayColTotal}
+            totalForDays={totalForDays}
+          />
+        ))}
+      </div>
+    </section>
+  )
+}
+
+interface ReportSummaryPageProps {
+  siteName: string
+  period: string
+  days: Date[]
+  trades: Trade[]
+  monthGroups: MonthGroup[]
+  grandTotal: number
+  maxDay: { day: Date; total: number }
+  maxMonthTotal: number
+  tradeTotal: (tradeId: string, targetDays?: Date[]) => number
+  totalForDays: (targetDays: Date[]) => number
+}
+
+function ReportSummaryPage({
+  siteName,
+  period,
+  days,
+  trades,
+  monthGroups,
+  grandTotal,
+  maxDay,
+  maxMonthTotal,
+  tradeTotal,
+  totalForDays,
+}: ReportSummaryPageProps) {
+  return (
+    <article className="report-sheet rounded-xl bg-slate-50 p-6">
+      <div className="mb-5 flex items-start justify-between gap-6">
         <div>
           <p className="text-sm font-semibold text-blue-600">출근기록 보고서</p>
-          <h2 className="mt-1 text-[1.65rem] font-extrabold leading-tight tracking-normal">
-            {siteName} 인테리어 공종별 출근기록부
+          <h2 className="mt-1 text-[1.55rem] font-extrabold leading-tight tracking-normal">
+            {siteName} 월간 출근 요약
           </h2>
           <p className="mt-2 text-sm text-slate-500">기간 {period}</p>
         </div>
+        <p className="rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-500 shadow-sm">SiteLog</p>
       </div>
 
-      <div className="mb-6 grid grid-cols-3 gap-3">
+      <div className="mb-5 grid grid-cols-4 gap-3">
         <MetricCard label="총 공수" value={formatManDay(grandTotal)} unit="공수" strong />
         <MetricCard label="작업 기간" value={formatManDay(days.length)} unit="일" />
         <MetricCard label="참여 공종" value={formatManDay(trades.length)} unit="개" />
+        <MetricCard label="최대 투입일" value={formatManDay(maxDay.total)} unit={`공수 · ${fmtKShort(maxDay.day)}`} />
       </div>
 
-      <div className="mb-6 grid grid-cols-[0.95fr_1fr] gap-4">
+      <div className="grid grid-cols-[0.9fr_1.1fr] gap-4">
         <section className="rounded-xl border border-slate-200 bg-white p-5">
           <h3 className="mb-4 text-base font-extrabold">월별 공수 현황</h3>
           <div className="space-y-4">
@@ -405,8 +469,8 @@ function ReportPreview({
         <section className="rounded-xl border border-slate-200 bg-white p-5">
           <h3 className="mb-4 text-base font-extrabold">공종별 누적 공수</h3>
           <div className="grid grid-cols-3 gap-2">
-            {cumulativeTrades.map((trade) => (
-              <div key={trade.id} className="flex items-center justify-between rounded-md bg-slate-50 px-3 py-1.5 text-sm">
+            {trades.map((trade) => (
+              <div key={trade.id} className="flex min-w-0 items-center justify-between rounded-md bg-slate-50 px-3 py-1.5 text-sm">
                 <span className="truncate text-slate-600">{trade.name}</span>
                 <span className="font-bold text-blue-600">{formatManDay(tradeTotal(trade.id))}</span>
               </div>
@@ -415,28 +479,140 @@ function ReportPreview({
         </section>
       </div>
 
-      <div className="space-y-5">
-        {monthGroups.map((group) => (
-          <section key={group.key} className="report-month rounded-xl border border-slate-200 bg-white p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-lg font-extrabold">{group.label} 상세 출근 현황</h3>
-              <p className="text-sm font-semibold text-blue-600">월 공수 {formatManDay(totalForDays(group.days))}공수</p>
-            </div>
-            <AttendanceMatrix
-              days={group.days}
-              trades={activeTradesForDays(group.days)}
-              getCount={getCount}
-              tradeTotal={tradeTotal}
-              dayColTotal={dayColTotal}
-              total={totalForDays(group.days)}
-            />
-          </section>
+      <p className="mt-4 text-xs text-slate-400">※ 공수는 작업 인원 x 작업일 기준으로 집계</p>
+    </article>
+  )
+}
+
+interface MonthlyCalendarPageProps {
+  siteName: string
+  group: MonthGroup
+  trades: Trade[]
+  getCount: (tradeId: string, d: Date) => number
+  dayColTotal: (d: Date) => number
+  totalForDays: (targetDays: Date[]) => number
+}
+
+function MonthlyCalendarPage({ siteName, group, trades, getCount, dayColTotal, totalForDays }: MonthlyCalendarPageProps) {
+  const tradeCodes = buildTradeCodes(trades)
+  const leadingBlanks = (group.days[0].getDay() + 6) % 7
+  const trailingBlanks = (7 - ((leadingBlanks + group.days.length) % 7)) % 7
+  const calendarCells = [
+    ...Array.from({ length: leadingBlanks }, () => null),
+    ...group.days,
+    ...Array.from({ length: trailingBlanks }, () => null),
+  ]
+
+  return (
+    <article className="report-sheet rounded-xl bg-slate-50 p-6">
+      <div className="mb-4 flex items-start justify-between gap-6">
+        <div>
+          <p className="text-sm font-semibold text-blue-600">월별 상세 출근 현황</p>
+          <h2 className="mt-1 text-[1.45rem] font-extrabold leading-tight tracking-normal">
+            {siteName} · {group.label}
+          </h2>
+        </div>
+        <p className="text-sm font-semibold text-blue-600">월 공수 {formatManDay(totalForDays(group.days))}공수</p>
+      </div>
+
+      <div className="grid grid-cols-7 gap-1.5 text-center text-[0.7rem] font-bold text-slate-500">
+        {['월', '화', '수', '목', '금', '토', '일'].map((label) => (
+          <span key={label}>{label}</span>
         ))}
       </div>
 
-      <p className="mt-4 text-xs text-slate-400">※ 공수는 작업 인원 x 작업일 기준으로 집계</p>
-    </section>
+      <div className="mt-1.5 grid grid-cols-7 gap-1.5">
+        {calendarCells.map((day, index) =>
+          day ? (
+            <CalendarDay
+              key={ymd(day)}
+              day={day}
+              trades={trades}
+              tradeCodes={tradeCodes}
+              getCount={getCount}
+              dayColTotal={dayColTotal}
+            />
+          ) : (
+            <div key={`blank-${index}`} className="min-h-[82px] rounded-lg border border-dashed border-slate-200 bg-white/40" />
+          ),
+        )}
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-[0.72rem] text-slate-500">
+        {trades.map((trade) => (
+          <span key={trade.id} className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: trade.color }} />
+            <b className="text-slate-700">{tradeCodes[trade.id]}</b>={trade.name}
+          </span>
+        ))}
+      </div>
+    </article>
   )
+}
+
+interface CalendarDayProps {
+  day: Date
+  trades: Trade[]
+  tradeCodes: Record<string, string>
+  getCount: (tradeId: string, d: Date) => number
+  dayColTotal: (d: Date) => number
+}
+
+function CalendarDay({ day, trades, tradeCodes, getCount, dayColTotal }: CalendarDayProps) {
+  const entries = trades
+    .map((trade) => ({ trade, count: getCount(trade.id, day) }))
+    .filter((entry) => entry.count > 0)
+
+  return (
+    <div className="min-h-[82px] rounded-lg border border-slate-200 bg-white p-1.5">
+      <div className="mb-1 flex items-start justify-between gap-1">
+        <span className="text-[0.72rem] font-extrabold text-ink">{day.getDate()}</span>
+        <span className="text-[0.72rem] font-extrabold text-blue-600">
+          {dayColTotal(day) > 0 ? formatManDay(dayColTotal(day)) : '-'}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-1">
+        {entries.map(({ trade, count }) => (
+          <span
+            key={trade.id}
+            className="flex min-w-0 items-center justify-between rounded px-1 py-0.5 text-[0.58rem] font-extrabold leading-none text-white"
+            style={{ backgroundColor: trade.color }}
+            title={`${trade.name} ${formatManDay(count)}공수`}
+          >
+            <span className="truncate">{tradeCodes[trade.id]}</span>
+            <span>{formatManDay(count)}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function buildTradeCodes(trades: Trade[]) {
+  const used = new Set<string>()
+  const codes: Record<string, string> = {}
+
+  for (const trade of trades) {
+    const compactName = trade.name.replace(/\s+/g, '')
+    let code = compactName.slice(0, 1) || trade.name.slice(0, 1)
+
+    for (let length = 1; used.has(code) && length <= compactName.length; length += 1) {
+      code = compactName.slice(0, length + 1)
+    }
+
+    if (used.has(code)) {
+      let suffix = 2
+      const base = code || '공'
+      while (used.has(`${base}${suffix}`)) suffix += 1
+      code = `${base}${suffix}`
+    }
+
+    used.add(code)
+    codes[trade.id] = code
+  }
+
+  return codes
 }
 
 function MetricCard({ label, value, unit, strong }: { label: string; value: string; unit: string; strong?: boolean }) {
@@ -447,65 +623,6 @@ function MetricCard({ label, value, unit, strong }: { label: string; value: stri
         {value}
         <span className="ml-1 text-sm font-medium text-slate-500">{unit}</span>
       </p>
-    </div>
-  )
-}
-
-interface AttendanceMatrixProps {
-  days: Date[]
-  trades: Trade[]
-  getCount: (tradeId: string, d: Date) => number
-  tradeTotal: (tradeId: string, targetDays?: Date[]) => number
-  dayColTotal: (d: Date) => number
-  total: number
-}
-
-function AttendanceMatrix({ days, trades, getCount, tradeTotal, dayColTotal, total }: AttendanceMatrixProps) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[760px] text-xs tabular-nums">
-        <thead>
-          <tr className="border-y border-slate-200 bg-slate-50">
-            <th className="px-3 py-2 text-left font-bold text-slate-600">공종</th>
-            {days.map((d) => (
-              <th key={ymd(d)} className="px-2 py-2 text-center font-semibold text-slate-500">
-                {fmtKShort(d)}
-              </th>
-            ))}
-            <th className="px-3 py-2 text-right font-bold text-blue-600">합계</th>
-          </tr>
-        </thead>
-        <tbody>
-          {trades.map((trade) => (
-            <tr key={trade.id} className="border-b border-slate-100">
-              <td className="px-3 py-2 font-semibold text-slate-700">{trade.name}</td>
-              {days.map((d) => {
-                const count = getCount(trade.id, d)
-                return (
-                  <td key={ymd(d)} className={`px-2 py-2 text-center ${count > 0 ? 'text-ink' : 'text-slate-300'}`}>
-                    {count > 0 ? formatManDay(count) : '-'}
-                  </td>
-                )
-              })}
-              <td className="px-3 py-2 text-right font-bold text-blue-600">{formatManDay(tradeTotal(trade.id, days))}</td>
-            </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr className="bg-blue-50">
-            <td className="px-3 py-2 font-extrabold">합계</td>
-            {days.map((d) => {
-              const count = dayColTotal(d)
-              return (
-                <td key={ymd(d)} className={`px-2 py-2 text-center font-bold ${count > 0 ? 'text-blue-600' : 'text-slate-300'}`}>
-                  {count > 0 ? formatManDay(count) : '-'}
-                </td>
-              )
-            })}
-            <td className="px-3 py-2 text-right font-extrabold text-blue-600">{formatManDay(total)}</td>
-          </tr>
-        </tfoot>
-      </table>
     </div>
   )
 }
