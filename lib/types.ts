@@ -84,3 +84,17 @@ export interface WorkerRecord {
   memo?: string
   paymentStatus: PaymentStatus
 }
+
+export type ExpenseType = 'income' | 'expense'
+
+export interface ExpenseItem {
+  id: string
+  siteId: string
+  date: string
+  time: string
+  category: string
+  description: string
+  amount: number
+  type: ExpenseType
+}
+

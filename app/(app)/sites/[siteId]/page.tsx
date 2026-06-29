@@ -9,6 +9,7 @@ import { ymd } from '@/lib/utils'
 import { InputStepperTab } from './tabs/input-stepper'
 import { CalendarTab } from './tabs/calendar'
 import { TableTab } from './tabs/table'
+import { ExpenseTab } from './tabs/expense'
 import type { SiteStatus } from '@/lib/types'
 
 const statusTone: Record<SiteStatus, 'blue' | 'amber' | 'slate'> = {
@@ -19,6 +20,7 @@ const TABS = [
   { value: 'input',   label: '입력' },
   { value: 'calendar', label: '달력' },
   { value: 'table',   label: '표' },
+  { value: 'expense',  label: '경비' },
 ]
 
 export default function SiteDetailPage({ params }: { params: Promise<{ siteId: string }> }) {
@@ -104,7 +106,11 @@ export default function SiteDetailPage({ params }: { params: Promise<{ siteId: s
         {tab === 'table' && (
           <TableTab site={site} trades={trades} records={records} />
         )}
+        {tab === 'expense' && (
+          <ExpenseTab site={site} />
+        )}
       </div>
     </div>
   )
 }
+

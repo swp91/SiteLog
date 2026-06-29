@@ -1,7 +1,7 @@
 'use client'
 
 import { create } from 'zustand'
-import type { AppUser, Journal, Journals, Records, Site, Trade, UserType, WorkerRecord, WorkerSite, DayRecord } from '@/lib/types'
+import type { AppUser, Journal, Journals, Records, Site, Trade, UserType, WorkerRecord, WorkerSite, DayRecord, ExpenseItem } from '@/lib/types'
 import { withEntry } from '@/lib/utils'
 import { auth, db } from '@/lib/firebase'
 import {
@@ -32,6 +32,7 @@ interface AppState {
   journals: Journals
   workerSites: WorkerSite[]
   workerRecords: WorkerRecord[]
+  expenses: ExpenseItem[]
   toast: string
   authInitialized: boolean
 
@@ -67,6 +68,11 @@ interface AppState {
   addWorkerRecord: (record: Omit<WorkerRecord, 'id'>) => Promise<void>
   updateWorkerRecord: (record: WorkerRecord) => Promise<void>
   deleteWorkerRecord: (id: string) => Promise<void>
+
+  // expenses CRUD
+  addExpense: (expense: Omit<ExpenseItem, 'id'>) => Promise<void>
+  updateExpense: (expense: ExpenseItem) => Promise<void>
+  deleteExpense: (id: string) => Promise<void>
 
   // toast
   flash: (message: string) => void
@@ -105,6 +111,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   journals: {},
   workerSites: [],
   workerRecords: [],
+  expenses: [],
   toast: '',
   authInitialized: false,
   unsubscribes: [],
@@ -219,6 +226,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       }, (err) => console.error('WorkerRecords sync error:', err))
       unsubs.push(workerRecordsUnsub)
 
+      const expensesUnsub = onSnapshot(collection(db, 'users', uid, 'expenses'), (snapshot) => {
+        const expensesList: ExpenseItem[] = []
+        snapshot.forEach((d) => {
+          expensesList.push({ id: d.id, ...d.data() } as ExpenseItem)
+        })
+        set({ expenses: expensesList })
+      }, (err) => console.error('Expenses sync error:', err))
+      unsubs.push(expensesUnsub)
+
       set({ unsubscribes: unsubs })
     } catch (e) {
       console.error('Error setting up realtime listeners:', e)
@@ -282,6 +298,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       workerRecordsList.push({ id: d.id, ...d.data() } as WorkerRecord)
     })
 
+    const expensesSnapshot = await getDocs(collection(db, 'users', uid, 'expenses'))
+    const expensesList: ExpenseItem[] = []
+    expensesSnapshot.forEach((d) => {
+      expensesList.push({ id: d.id, ...d.data() } as ExpenseItem)
+    })
+
     set({
       sites: sitesList,
       trades: tradesList,
@@ -289,6 +311,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       journals: journalsObj,
       workerSites: workerSitesList,
       workerRecords: workerRecordsList,
+      expenses: expensesList,
     })
   },
 
@@ -454,6 +477,28 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((s) => ({ workerRecords: s.workerRecords.filter((x) => x.id !== id) }))
   },
 
+  addExpense: async (expense) => {
+    const uid = get().user.id
+    if (!uid) return
+    const newExpense: ExpenseItem = { ...expense, id: createId('expense') }
+    await setDoc(doc(db, 'users', uid, 'expenses', newExpense.id), newExpense)
+    set((s) => ({ expenses: [...s.expenses, newExpense] }))
+  },
+
+  updateExpense: async (expense) => {
+    const uid = get().user.id
+    if (!uid) return
+    await setDoc(doc(db, 'users', uid, 'expenses', expense.id), expense)
+    set((s) => ({ expenses: s.expenses.map((x) => (x.id === expense.id ? expense : x)) }))
+  },
+
+  deleteExpense: async (id) => {
+    const uid = get().user.id
+    if (!uid) return
+    await deleteDoc(doc(db, 'users', uid, 'expenses', id))
+    set((s) => ({ expenses: s.expenses.filter((x) => x.id !== id) }))
+  },
+
   updateProfile: async (patch) => {
     const uid = get().user.id
     if (!uid) return
@@ -609,6 +654,7 @@ if (typeof window !== 'undefined') {
         journals: {},
         workerSites: [],
         workerRecords: [],
+        expenses: [],
         authInitialized: true
       })
     }
