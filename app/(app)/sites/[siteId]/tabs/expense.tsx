@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { format, addMonths, subMonths, parseISO } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import { ChevronLeft, ChevronRight, Plus, Printer, Trash2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Printer, Trash2, Settings } from 'lucide-react'
 import { useAppStore } from '@/stores/app-store'
 import { Sheet, Button, TextInput, Field } from '@/components/ui'
 import { wonFmt, ymd } from '@/lib/utils'
@@ -14,10 +14,19 @@ interface ExpenseTabProps {
   site: Site
 }
 
-const CATEGORIES = ['예비비', '점심식사', '현장물품', '현장간식', '월세비', '기타']
+const DEFAULT_CATEGORIES = ['예비비', '점심식사', '현장물품', '현장간식', '월세비', '기타']
 
 export function ExpenseTab({ site }: ExpenseTabProps) {
-  const { expenses, addExpense, updateExpense, deleteExpense, flash } = useAppStore()
+  const { 
+    user,
+    expenses, 
+    addExpense, 
+    updateExpense, 
+    deleteExpense, 
+    addExpenseCategory,
+    deleteExpenseCategory,
+    flash 
+  } = useAppStore()
   
   // 현재 월 관리 (기본값: 오늘 날짜)
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -25,6 +34,10 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
   // 바텀시트 열림 여부 및 수정 대상
   const [isOpenSheet, setIsOpenSheet] = useState(false)
   const [editingExpense, setEditingExpense] = useState<ExpenseItem | null>(null)
+  
+  // 카테고리 설정 바텀시트 상태
+  const [isOpenCategorySheet, setIsOpenCategorySheet] = useState(false)
+  const [newCategoryInput, setNewCategoryInput] = useState('')
   
   // 포탈 렌더링용 마운트 여부
   const [isMounted, setIsMounted] = useState(false)
@@ -40,6 +53,10 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
   useEffect(() => {
     setIsMounted(true)
   }, [])
+
+  // 현재 유저의 커스텀 카테고리 또는 기본 폴백 카테고리
+  const userCategories = user.expenseCategories || []
+  const currentCategories = userCategories.length > 0 ? userCategories : DEFAULT_CATEGORIES
 
   // 현재 월의 경비 필터링
   const curYearMonth = format(currentDate, 'yyyy-MM')
@@ -361,7 +378,18 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
             </div>
 
             {/* 카테고리 입력 */}
-            <Field label="카테고리">
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between w-full">
+                <span className="text-[0.8125rem] font-semibold text-slate-700 dark:text-slate-300">카테고리</span>
+                <button
+                  type="button"
+                  onClick={() => setIsOpenCategorySheet(true)}
+                  className="text-[0.6875rem] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-0.5 active:scale-95 transition-all"
+                >
+                  <Settings size={11} />
+                  설정
+                </button>
+              </div>
               <TextInput
                 placeholder="카테고리를 입력하거나 아래에서 선택하세요"
                 value={formCategory}
@@ -369,7 +397,7 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
                 required
               />
               <div className="flex flex-wrap gap-1.5 mt-1.5">
-                {CATEGORIES.map((cat) => (
+                {currentCategories.map((cat) => (
                   <button
                     key={cat}
                     type="button"
@@ -384,7 +412,7 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
                   </button>
                 ))}
               </div>
-            </Field>
+            </div>
 
             {/* 금액 입력 */}
             <Field label="금액 (원)">
@@ -424,6 +452,66 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
               </Button>
             </div>
           </form>
+        </Sheet>
+
+        {/* 카테고리 관리 바텀시트 */}
+        <Sheet
+          open={isOpenCategorySheet}
+          onClose={() => setIsOpenCategorySheet(false)}
+          title="카테고리 설정"
+        >
+          <div className="space-y-5">
+            {/* 새 카테고리 추가 */}
+            <div className="flex gap-2">
+              <TextInput
+                placeholder="새 카테고리 이름"
+                value={newCategoryInput}
+                onChange={(e) => setNewCategoryInput(e.target.value)}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                onClick={async () => {
+                  if (!newCategoryInput.trim()) return
+                  await addExpenseCategory(newCategoryInput.trim())
+                  setNewCategoryInput('')
+                  flash('카테고리가 추가되었습니다')
+                }}
+                className="px-4 h-11 shrink-0 font-bold"
+              >
+                추가
+              </Button>
+            </div>
+
+            {/* 현재 목록 */}
+            <div className="space-y-2">
+              <p className="text-[0.6875rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                현재 사용 중인 카테고리
+              </p>
+              <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[240px] overflow-y-auto border border-slate-100 dark:border-slate-800 rounded-lg">
+                {currentCategories.map((cat) => (
+                  <div
+                    key={cat}
+                    className="flex items-center justify-between px-3 py-2.5 bg-white dark:bg-slate-900/40 text-xs"
+                  >
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">{cat}</span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (confirm(`'${cat}' 카테고리를 정말 삭제하시겠습니까?`)) {
+                          await deleteExpenseCategory(cat)
+                          flash('카테고리가 삭제되었습니다')
+                        }
+                      }}
+                      className="text-rose-600 hover:text-rose-700 active:scale-95 transition-all p-1 font-bold"
+                    >
+                      삭제
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </Sheet>
       </div>
 
@@ -529,3 +617,4 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
     </>
   )
 }
+

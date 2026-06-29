@@ -74,6 +74,10 @@ interface AppState {
   updateExpense: (expense: ExpenseItem) => Promise<void>
   deleteExpense: (id: string) => Promise<void>
 
+  // expense categories
+  addExpenseCategory: (category: string) => Promise<void>
+  deleteExpenseCategory: (category: string) => Promise<void>
+
   // toast
   flash: (message: string) => void
 
@@ -499,6 +503,25 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((s) => ({ expenses: s.expenses.filter((x) => x.id !== id) }))
   },
 
+  addExpenseCategory: async (category) => {
+    const uid = get().user.id
+    if (!uid) return
+    const current = get().user.expenseCategories || []
+    if (current.includes(category)) return
+    const next = [...current, category]
+    await updateDoc(doc(db, 'users', uid), { expenseCategories: next })
+    set((s) => ({ user: { ...s.user, expenseCategories: next } }))
+  },
+
+  deleteExpenseCategory: async (category) => {
+    const uid = get().user.id
+    if (!uid) return
+    const current = get().user.expenseCategories || []
+    const next = current.filter((x) => x !== category)
+    await updateDoc(doc(db, 'users', uid), { expenseCategories: next })
+    set((s) => ({ user: { ...s.user, expenseCategories: next } }))
+  },
+
   updateProfile: async (patch) => {
     const uid = get().user.id
     if (!uid) return
@@ -592,6 +615,7 @@ if (typeof window !== 'undefined') {
             bank: data.bank || '',
             account: data.account || '',
             holder: data.holder || '',
+            expenseCategories: data.expenseCategories || [],
           }
         } else {
           // 데이터베이스 미생성 당시 꼬였던 불완전 가입 계정 자동 복구
@@ -606,13 +630,15 @@ if (typeof window !== 'undefined') {
             avatar: fallbackName[0].toUpperCase(),
             phone: '',
             company: '',
-            joined: new Date().toISOString().slice(0, 7)
+            joined: new Date().toISOString().slice(0, 7),
+            expenseCategories: [],
           }
           await setDoc(docRef, {
             name: userData.name,
             email: userData.email,
             type: userData.type,
-            joined: userData.joined
+            joined: userData.joined,
+            expenseCategories: []
           })
         }
 

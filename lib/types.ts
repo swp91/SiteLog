@@ -65,6 +65,7 @@ export interface AppUser {
   bank?: string
   account?: string
   holder?: string
+  expenseCategories?: string[]
 }
 
 export interface WorkerSite {
