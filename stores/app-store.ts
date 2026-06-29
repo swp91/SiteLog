@@ -506,9 +506,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   addExpenseCategory: async (category) => {
     const uid = get().user.id
     if (!uid) return
-    const current = get().user.expenseCategories || []
-    if (current.includes(category)) return
-    const next = [...current, category]
+    const current = get().user.expenseCategories ?? []
+    const list = current.length > 0 ? current : ['예비비', '점심식사', '현장물품', '현장간식', '월세비', '기타']
+    if (list.includes(category)) return
+    const next = [...list, category]
     await updateDoc(doc(db, 'users', uid), { expenseCategories: next })
     set((s) => ({ user: { ...s.user, expenseCategories: next } }))
   },
@@ -516,8 +517,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   deleteExpenseCategory: async (category) => {
     const uid = get().user.id
     if (!uid) return
-    const current = get().user.expenseCategories || []
-    const next = current.filter((x) => x !== category)
+    const current = get().user.expenseCategories ?? []
+    const list = current.length > 0 ? current : ['예비비', '점심식사', '현장물품', '현장간식', '월세비', '기타']
+    const next = list.filter((x) => x !== category)
     await updateDoc(doc(db, 'users', uid), { expenseCategories: next })
     set((s) => ({ user: { ...s.user, expenseCategories: next } }))
   },

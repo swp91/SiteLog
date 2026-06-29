@@ -39,6 +39,19 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
   const [isOpenCategorySheet, setIsOpenCategorySheet] = useState(false)
   const [newCategoryInput, setNewCategoryInput] = useState('')
   
+  // 확인 모달 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    onConfirm: () => void
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  })
+  
   // 포탈 렌더링용 마운트 여부
   const [isMounted, setIsMounted] = useState(false)
   
@@ -163,16 +176,21 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
   // 삭제 처리
   const handleDelete = async () => {
     if (!editingExpense) return
-    if (confirm('정말 삭제하시겠습니까?')) {
-      try {
-        await deleteExpense(editingExpense.id)
-        flash('삭제되었습니다')
-        setIsOpenSheet(false)
-      } catch (err) {
-        console.error(err)
-        flash('삭제에 실패했습니다')
+    setConfirmModal({
+      isOpen: true,
+      title: '경비 내역 삭제',
+      message: '이 경비 내역을 정말 삭제하시겠습니까?',
+      onConfirm: async () => {
+        try {
+          await deleteExpense(editingExpense.id)
+          flash('삭제되었습니다')
+          setIsOpenSheet(false)
+        } catch (err) {
+          console.error(err)
+          flash('삭제에 실패했습니다')
+        }
       }
-    }
+    })
   }
 
   // PDF 내보내기 (브라우저 인쇄)
@@ -497,11 +515,16 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
                     <span className="font-semibold text-slate-700 dark:text-slate-300">{cat}</span>
                     <button
                       type="button"
-                      onClick={async () => {
-                        if (confirm(`'${cat}' 카테고리를 정말 삭제하시겠습니까?`)) {
-                          await deleteExpenseCategory(cat)
-                          flash('카테고리가 삭제되었습니다')
-                        }
+                      onClick={() => {
+                        setConfirmModal({
+                          isOpen: true,
+                          title: '카테고리 삭제',
+                          message: `'${cat}' 카테고리를 정말 삭제하시겠습니까?`,
+                          onConfirm: async () => {
+                            await deleteExpenseCategory(cat)
+                            flash('카테고리가 삭제되었습니다')
+                          }
+                        })
                       }}
                       className="text-rose-600 hover:text-rose-700 active:scale-95 transition-all p-1 font-bold"
                     >
@@ -613,6 +636,40 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
           </div>
         </div>,
         document.body
+      )}
+
+      {/* 커스텀 확인 모달 */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-ink/30 backdrop-blur-sm animate-[fadeIn_.2s_ease]"
+            onClick={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+          />
+          {/* Content */}
+          <div className="relative w-full max-w-[300px] bg-white dark:bg-slate-900 rounded-xl p-5 shadow-lg border border-slate-100 dark:border-slate-800/80 animate-[slideUp_.26s_cubic-bezier(.16,1,.3,1)]">
+            <h3 className="text-sm font-bold text-ink dark:text-white mb-2">{confirmModal.title}</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">{confirmModal.message}</p>
+            <div className="flex gap-2.5">
+              <Button
+                variant="outline"
+                className="flex-1 h-10 text-xs font-semibold"
+                onClick={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+              >
+                취소
+              </Button>
+              <Button
+                className="flex-1 h-10 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white border-none"
+                onClick={() => {
+                  confirmModal.onConfirm()
+                  setConfirmModal((prev) => ({ ...prev, isOpen: false }))
+                }}
+              >
+                삭제
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   )
