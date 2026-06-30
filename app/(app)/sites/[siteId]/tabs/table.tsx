@@ -222,7 +222,7 @@ ${tradeLines || '내역 없음'}
   )
 
   return (
-    <div className="max-w-[900px] mx-auto px-4 pb-8 pt-4">
+    <div className="max-w-[1100px] mx-auto px-4 pb-8 pt-4">
       <div className="mb-4 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
         <div className="flex flex-col gap-3 wide:flex-row wide:items-center wide:justify-between">
           <div>
@@ -241,11 +241,11 @@ ${tradeLines || '내역 없음'}
             </Button>
           </div>
         </div>
-
+ 
         <div className="mt-3 overflow-x-auto scrollbar-none">
           <Segmented value={periodMode} onChange={(value) => setPeriodMode(value as PeriodMode)} options={PERIOD_OPTIONS} />
         </div>
-
+ 
         {periodMode === 'custom' && (
           <div className="mt-3 grid grid-cols-2 gap-2">
             <TextInput type="date" value={customFrom} onChange={(event) => setCustomFrom(event.target.value)} />
@@ -253,55 +253,110 @@ ${tradeLines || '내역 없음'}
           </div>
         )}
       </div>
-
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white scrollbar-none">
-        <table className="w-full text-[0.8125rem] tabular-nums">
+ 
+      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white scrollbar-thin">
+        <table className="w-full text-xs tabular-nums border-collapse">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50">
-              <th className="sticky left-0 bg-slate-50 text-left px-3 py-2 font-semibold text-slate-600 min-w-[80px]">
+            {/* Row 1: Months */}
+            <tr className="bg-slate-50 border-b border-slate-100">
+              <th rowSpan={2} className="sticky left-0 z-10 bg-slate-50 text-left px-3 py-3 font-bold text-slate-700 min-w-[84px] border-r border-slate-200/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
                 공종
               </th>
-              {days.map((d) => (
-                <th key={ymd(d)} className="px-2 py-2 font-semibold text-slate-500 text-center min-w-[36px]">
-                  {fmtKShort(d)}
+              {monthGroups.map((group) => (
+                <th
+                  key={group.key}
+                  colSpan={group.days.length}
+                  className="px-2 py-1.5 font-bold text-slate-600 text-center border-b border-slate-200 bg-slate-100/60 text-[0.6875rem] tracking-wider"
+                >
+                  {group.label}
                 </th>
               ))}
-              <th className="px-3 py-2 font-bold text-ink text-right min-w-[48px]">합계</th>
+              <th rowSpan={2} className="px-3 py-3 font-bold text-slate-700 text-right min-w-[54px] border-l border-slate-200/80">
+                합계
+              </th>
+            </tr>
+            {/* Row 2: Days */}
+            <tr className="bg-slate-50 border-b border-slate-200">
+              {days.map((d) => {
+                const dayOfWeek = d.getDay()
+                const isSun = dayOfWeek === 0
+                const isSat = dayOfWeek === 6
+                return (
+                  <th
+                    key={ymd(d)}
+                    className={`px-1 py-1.5 font-semibold text-center min-w-[26px] text-[0.6875rem] border-r border-slate-100 last:border-r-0 ${
+                      isSun ? 'text-red-500 bg-red-50/20' : isSat ? 'text-blue-500 bg-blue-50/20' : 'text-slate-500'
+                    }`}
+                  >
+                    {d.getDate()}
+                  </th>
+                )
+              })}
             </tr>
           </thead>
           <tbody>
             {activeTrades.map((trade) => (
-              <tr key={trade.id} className="border-b border-slate-100 hover:bg-slate-50">
-                <td className="sticky left-0 bg-white px-3 py-2">
+              <tr key={trade.id} className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
+                <td className="sticky left-0 z-10 bg-white px-3 py-2 border-r border-slate-200/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
                   <div className="flex items-center gap-1.5">
                     <TradeDot color={trade.color} size="sm" />
-                    <span className="font-medium text-ink">{trade.name}</span>
+                    <span className="font-semibold text-slate-700 truncate max-w-[70px]" title={trade.name}>
+                      {trade.name}
+                    </span>
                   </div>
                 </td>
                 {days.map((d) => {
                   const count = getCount(trade.id, d)
+                  const dayOfWeek = d.getDay()
+                  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
                   return (
-                    <td key={ymd(d)} className={`px-2 py-2 text-center ${count > 0 ? 'text-ink font-semibold' : 'text-slate-200'}`}>
+                    <td
+                      key={ymd(d)}
+                      className={`px-1 py-2 text-center border-r border-slate-100/50 last:border-r-0 ${
+                        count > 0 
+                          ? 'text-slate-900 font-bold bg-blue-50/10' 
+                          : isWeekend 
+                            ? 'text-slate-200 bg-slate-50/30' 
+                            : 'text-slate-200'
+                      }`}
+                    >
                       {count > 0 ? formatManDay(count) : '-'}
                     </td>
                   )
                 })}
-                <td className="px-3 py-2 text-right font-bold text-blue-600">{formatManDay(tradeTotal(trade.id))}</td>
+                <td className="px-3 py-2 text-right font-bold text-blue-600 bg-blue-50/20 border-l border-slate-200/80">
+                  {formatManDay(tradeTotal(trade.id))}
+                </td>
               </tr>
             ))}
           </tbody>
           <tfoot>
-            <tr className="bg-slate-50 border-t border-slate-200">
-              <td className="sticky left-0 bg-slate-50 px-3 py-2 font-bold text-ink">합계</td>
+            <tr className="bg-slate-50/80 border-t border-slate-200 font-bold">
+              <td className="sticky left-0 z-10 bg-slate-50 px-3 py-2.5 text-slate-700 border-r border-slate-200/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                합계
+              </td>
               {days.map((d) => {
                 const count = dayColTotal(d)
+                const dayOfWeek = d.getDay()
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
                 return (
-                  <td key={ymd(d)} className={`px-2 py-2 text-center font-bold ${count > 0 ? 'text-ink' : 'text-slate-200'}`}>
+                  <td
+                    key={ymd(d)}
+                    className={`px-1 py-2.5 text-center border-r border-slate-100 last:border-r-0 ${
+                      count > 0 
+                        ? 'text-slate-800 font-extrabold' 
+                        : isWeekend 
+                          ? 'text-slate-200 bg-slate-100/20' 
+                          : 'text-slate-200'
+                    }`}
+                  >
                     {count > 0 ? formatManDay(count) : '-'}
                   </td>
                 )
               })}
-              <td className="px-3 py-2 text-right font-extrabold text-blue-600">{formatManDay(grandTotal)}</td>
+              <td className="px-3 py-2.5 text-right font-extrabold text-blue-600 bg-blue-50/30 border-l border-slate-200/80">
+                {formatManDay(grandTotal)}
+              </td>
             </tr>
           </tfoot>
         </table>

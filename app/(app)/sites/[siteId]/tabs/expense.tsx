@@ -131,7 +131,7 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
     setFormTime(item.time)
     setFormCategory(item.category)
     setFormDescription(item.description)
-    setFormAmount(item.amount.toString())
+    setFormAmount(item.amount.toLocaleString())
     setIsOpenSheet(true)
   }
 
@@ -435,10 +435,18 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
             {/* 금액 입력 */}
             <Field label="금액 (원)">
               <TextInput
-                type="number"
+                type="text"
+                inputMode="numeric"
                 placeholder="금액을 입력하세요"
                 value={formAmount}
-                onChange={(e) => setFormAmount(e.target.value)}
+                onChange={(e) => {
+                  const rawValue = e.target.value.replace(/[^0-9]/g, '')
+                  if (rawValue === '') {
+                    setFormAmount('')
+                  } else {
+                    setFormAmount(Number(rawValue).toLocaleString())
+                  }
+                }}
                 required
               />
             </Field>
