@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { format, addMonths, subMonths, parseISO } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, Plus, Printer, Trash2, Settings } from 'lucide-react'
 import { useAppStore } from '@/stores/app-store'
-import { Sheet, Button, TextInput, Field } from '@/components/ui'
+import { Sheet, Button, TextInput, Field, Segmented } from '@/components/ui'
 import { wonFmt, ymd } from '@/lib/utils'
 import type { Site, ExpenseItem, ExpenseType } from '@/lib/types'
 
@@ -15,6 +15,12 @@ interface ExpenseTabProps {
 }
 
 const DEFAULT_CATEGORIES = ['예비비', '점심식사', '현장물품', '현장간식', '월세비', '기타']
+const PERIOD_OPTIONS = [
+  { value: 'all', label: '전체' },
+  { value: 'this-month', label: '이번 달' },
+  { value: 'last-month', label: '지난 달' },
+  { value: 'custom', label: '직접 선택' },
+]
 
 export function ExpenseTab({ site }: ExpenseTabProps) {
   const { 
@@ -63,6 +69,44 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
   const [formDescription, setFormDescription] = useState('')
   const [formAmount, setFormAmount] = useState('')
 
+  // 기간 선택 필터 상태
+  type PeriodMode = 'all' | 'this-month' | 'last-month' | 'custom'
+  const [periodMode, setPeriodMode] = useState<PeriodMode>('all')
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const expenseDates = useMemo(() => {
+    return expenses
+      .filter((e) => e.siteId === site.id)
+      .map((e) => e.date)
+      .sort()
+  }, [expenses, site.id])
+
+  const dataFromStr = expenseDates.length > 0 ? expenseDates[0] : ymd(today)
+  const dataToStr = expenseDates.length > 0 ? expenseDates[expenseDates.length - 1] : ymd(today)
+
+  const [customFrom, setCustomFrom] = useState(dataFromStr)
+  const [customTo, setCustomTo] = useState(dataToStr)
+
+  const [fromDate, toDate] = useMemo(() => {
+    if (periodMode === 'this-month') {
+      const start = format(new Date(today.getFullYear(), today.getMonth(), 1), 'yyyy-MM-dd')
+      const end = format(new Date(today.getFullYear(), today.getMonth() + 1, 0), 'yyyy-MM-dd')
+      return [start, end]
+    }
+    if (periodMode === 'last-month') {
+      const start = format(new Date(today.getFullYear(), today.getMonth() - 1, 1), 'yyyy-MM-dd')
+      const end = format(new Date(today.getFullYear(), today.getMonth(), 0), 'yyyy-MM-dd')
+      return [start, end]
+    }
+    if (periodMode === 'custom') {
+      return [customFrom, customTo]
+    }
+    // 'all'
+    return [dataFromStr, dataToStr]
+  }, [periodMode, customFrom, customTo, dataFromStr, dataToStr])
+
   useEffect(() => {
     setIsMounted(true)
   }, [])
@@ -71,15 +115,15 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
   const userCategories = user.expenseCategories || []
   const currentCategories = userCategories.length > 0 ? userCategories : DEFAULT_CATEGORIES
 
-  // 현재 월의 경비 필터링
-  const curYearMonth = format(currentDate, 'yyyy-MM')
-  const monthlyExpenses = expenses
-    .filter((e) => e.siteId === site.id && e.date.startsWith(curYearMonth))
-    .sort((a, b) => {
-      // 날짜 역순, 시간 역순 정렬
-      if (a.date !== b.date) return b.date.localeCompare(a.date)
-      return b.time.localeCompare(a.time)
-    })
+  // 선택된 기간의 경비 필터링
+  const monthlyExpenses = useMemo(() => {
+    return expenses
+      .filter((e) => e.siteId === site.id && e.date >= fromDate && e.date <= toDate)
+      .sort((a, b) => {
+        if (a.date !== b.date) return b.date.localeCompare(a.date)
+        return b.time.localeCompare(a.time)
+      })
+  }, [expenses, site.id, fromDate, toDate])
 
   // 통계 계산
   const totalIncome = monthlyExpenses
@@ -241,34 +285,46 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
           </div>
         </div>
 
-        {/* 연월 조작 및 PDF 출력 */}
-        <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800/80">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setCurrentDate((d) => subMonths(d, 1))}
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+        {/* 기간 선택 필터 */}
+        <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800/80 px-4 py-3 flex flex-col gap-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">조회 기간</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportPDF}
+              className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 h-8"
             >
-              <ChevronLeft size={18} />
-            </button>
-            <span className="text-sm font-bold text-ink dark:text-white">
-              {format(currentDate, 'yyyy년 M월', { locale: ko })}
-            </span>
-            <button
-              onClick={() => setCurrentDate((d) => addMonths(d, 1))}
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
-            >
-              <ChevronRight size={18} />
-            </button>
+              <Printer size={13} />
+              PDF 내보내기
+            </Button>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportPDF}
-            className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 h-9"
-          >
-            <Printer size={14} />
-            PDF 내보내기
-          </Button>
+          
+          <div className="overflow-x-auto scrollbar-none">
+            <Segmented
+              value={periodMode}
+              onChange={(value) => setPeriodMode(value as PeriodMode)}
+              options={PERIOD_OPTIONS}
+              full
+            />
+          </div>
+
+          {periodMode === 'custom' && (
+            <div className="grid grid-cols-2 gap-2 mt-1 animate-[fadeIn_0.2s_ease-out]">
+              <TextInput
+                type="date"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="h-9 text-xs"
+              />
+              <TextInput
+                type="date"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="h-9 text-xs"
+              />
+            </div>
+          )}
         </div>
 
         {/* 일별 목록 */}
@@ -552,7 +608,7 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-black">{site.name}</h1>
             <p className="text-sm text-gray-500 mt-1">
-              {format(currentDate, 'yyyy년 MM월', { locale: ko })} 예비비/경비 지출 보고서
+              기간: {fromDate} ~ {toDate} | 예비비/경비 지출 보고서
             </p>
           </div>
 
