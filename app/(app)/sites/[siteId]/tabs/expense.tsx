@@ -445,7 +445,14 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
                 <TextInput
                   type="time"
                   value={formTime}
-                  onChange={(e) => setFormTime(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setFormTime(val)
+                    // 시간과 분이 모두 선택 완료되었을 때(HH:MM 형식) 자동으로 선택창을 닫음 (blur 처리)
+                    if (val && /^\d{2}:\d{2}$/.test(val)) {
+                      e.target.blur()
+                    }
+                  }}
                   required
                 />
               </Field>
