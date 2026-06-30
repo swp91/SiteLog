@@ -324,14 +324,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!uid) return
     const newSite: Site = { ...site, id: createId('site') }
     await setDoc(doc(db, 'users', uid, 'sites', newSite.id), newSite)
-    set((s) => ({ sites: [...s.sites, newSite] }))
   },
 
   updateSite: async (site) => {
     const uid = get().user.id
     if (!uid) return
     await setDoc(doc(db, 'users', uid, 'sites', site.id), site)
-    set((s) => ({ sites: s.sites.map((x) => (x.id === site.id ? site : x)) }))
   },
 
   deleteSite: async (id) => {
@@ -346,7 +344,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     const newJournals = Object.fromEntries(Object.entries(get().journals).filter(([key]) => !key.startsWith(`${id}|`)))
     
     set({
-      sites: get().sites.filter((x) => x.id !== id),
       records: newRecords,
       journals: newJournals
     })
@@ -357,14 +354,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!uid) return
     const newTrade: Trade = { ...trade, id: createId('trade') }
     await setDoc(doc(db, 'users', uid, 'trades', newTrade.id), newTrade)
-    set((s) => ({ trades: [...s.trades, newTrade] }))
   },
 
   updateTrade: async (trade) => {
     const uid = get().user.id
     if (!uid) return
     await setDoc(doc(db, 'users', uid, 'trades', trade.id), trade)
-    set((s) => ({ trades: s.trades.map((x) => (x.id === trade.id ? trade : x)) }))
   },
 
   deleteTrade: async (id) => {
@@ -383,7 +378,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     )
 
     set({
-      trades: get().trades.filter((x) => x.id !== id),
       records,
     })
   },
@@ -437,14 +431,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!uid) return
     const newSite: WorkerSite = { ...site, id: createId('worker-site') }
     await setDoc(doc(db, 'users', uid, 'workerSites', newSite.id), newSite)
-    set((s) => ({ workerSites: [...s.workerSites, newSite] }))
   },
 
   updateWorkerSite: async (site) => {
     const uid = get().user.id
     if (!uid) return
     await setDoc(doc(db, 'users', uid, 'workerSites', site.id), site)
-    set((s) => ({ workerSites: s.workerSites.map((x) => (x.id === site.id ? site : x)) }))
   },
 
   deleteWorkerSite: async (id) => {
@@ -454,7 +446,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     await deleteDoc(doc(db, 'users', uid, 'workerSites', id))
     
     set((s) => ({
-      workerSites: s.workerSites.filter((x) => x.id !== id),
       workerRecords: s.workerRecords.filter((x) => x.siteId !== id),
     }))
   },
@@ -464,21 +455,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!uid) return
     const newRecord: WorkerRecord = { ...record, id: createId('worker-record') }
     await setDoc(doc(db, 'users', uid, 'workerRecords', newRecord.id), newRecord)
-    set((s) => ({ workerRecords: [...s.workerRecords, newRecord] }))
   },
 
   updateWorkerRecord: async (record) => {
     const uid = get().user.id
     if (!uid) return
     await setDoc(doc(db, 'users', uid, 'workerRecords', record.id), record)
-    set((s) => ({ workerRecords: s.workerRecords.map((x) => (x.id === record.id ? record : x)) }))
   },
 
   deleteWorkerRecord: async (id) => {
     const uid = get().user.id
     if (!uid) return
     await deleteDoc(doc(db, 'users', uid, 'workerRecords', id))
-    set((s) => ({ workerRecords: s.workerRecords.filter((x) => x.id !== id) }))
   },
 
   addExpense: async (expense) => {
@@ -486,21 +474,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!uid) return
     const newExpense: ExpenseItem = { ...expense, id: createId('expense') }
     await setDoc(doc(db, 'users', uid, 'expenses', newExpense.id), newExpense)
-    set((s) => ({ expenses: [...s.expenses, newExpense] }))
   },
 
   updateExpense: async (expense) => {
     const uid = get().user.id
     if (!uid) return
     await setDoc(doc(db, 'users', uid, 'expenses', expense.id), expense)
-    set((s) => ({ expenses: s.expenses.map((x) => (x.id === expense.id ? expense : x)) }))
   },
 
   deleteExpense: async (id) => {
     const uid = get().user.id
     if (!uid) return
     await deleteDoc(doc(db, 'users', uid, 'expenses', id))
-    set((s) => ({ expenses: s.expenses.filter((x) => x.id !== id) }))
   },
 
   addExpenseCategory: async (category) => {
