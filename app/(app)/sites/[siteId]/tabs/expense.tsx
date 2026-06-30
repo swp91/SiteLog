@@ -447,10 +447,17 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
                   value={formTime}
                   onChange={(e) => {
                     const val = e.target.value
+                    const prevVal = formTime
                     setFormTime(val)
-                    // 시간과 분이 모두 선택 완료되었을 때(HH:MM 형식) 자동으로 선택창을 닫음 (blur 처리)
-                    if (val && /^\d{2}:\d{2}$/.test(val)) {
-                      e.target.blur()
+                    
+                    // 이전 시간과 비교하여 '분(Minute)'이 변경되었을 때만 자동으로 선택창을 닫음 (blur 처리)
+                    // 오전/오후나 시(Hour) 변경 시에는 창이 바로 닫히지 않도록 방지
+                    if (val && prevVal && /^\d{2}:\d{2}$/.test(val) && /^\d{2}:\d{2}$/.test(prevVal)) {
+                      const [, prevMin] = prevVal.split(':')
+                      const [, newMin] = val.split(':')
+                      if (prevMin !== newMin) {
+                        e.target.blur()
+                      }
                     }
                   }}
                   required
