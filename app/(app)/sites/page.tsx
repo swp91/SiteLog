@@ -92,25 +92,27 @@ export default function SitesPage() {
           const total = dayTotal(records, site.id, todayStr)
           return (
             <Card key={site.id} className="flex flex-col gap-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-[0.9375rem] font-bold text-ink truncate">{site.name}</p>
-                  {site.addr && (
-                    <p className="flex items-center gap-1 text-xs text-slate-400 mt-0.5">
-                      <MapPin size={11} />
-                      {site.addr}
-                    </p>
-                  )}
+              <Link href={`/sites/${site.id}`} className="flex flex-col gap-3 group">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[0.9375rem] font-bold text-ink truncate group-hover:text-blue-600 transition-colors">{site.name}</p>
+                    {site.addr && (
+                      <p className="flex items-center gap-1 text-xs text-slate-400 mt-0.5">
+                        <MapPin size={11} />
+                        {site.addr}
+                      </p>
+                    )}
+                  </div>
+                  <Badge tone={statusTone[site.status]}>{site.status}</Badge>
                 </div>
-                <Badge tone={statusTone[site.status]}>{site.status}</Badge>
-              </div>
 
-              {site.manager && (
-                <p className="flex items-center gap-1.5 text-[0.8125rem] text-slate-500">
-                  <User size={13} className="text-slate-400" />
-                  {site.manager}
-                </p>
-              )}
+                {site.manager && (
+                  <p className="flex items-center gap-1.5 text-[0.8125rem] text-slate-500">
+                    <User size={13} className="text-slate-400" />
+                    {site.manager}
+                  </p>
+                )}
+              </Link>
 
               <div className="flex items-center justify-between pt-1 border-t border-slate-100">
                 <span className="text-[0.8125rem] text-slate-400">오늘 {total}명</span>
