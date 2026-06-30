@@ -495,11 +495,22 @@ interface MonthlyCalendarPageProps {
 
 function MonthlyCalendarPage({ siteName, group, trades, getCount, dayColTotal, totalForDays }: MonthlyCalendarPageProps) {
   const tradeCodes = buildTradeCodes(trades)
-  const leadingBlanks = (group.days[0].getDay() + 6) % 7
-  const trailingBlanks = (7 - ((leadingBlanks + group.days.length) % 7)) % 7
+
+  // Parse year and month to generate all days in this month
+  const [yearStr, monthStr] = group.key.split('-')
+  const year = parseInt(yearStr, 10)
+  const month = parseInt(monthStr, 10) - 1 // 0-indexed month
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+  const allDaysInMonth = daysBetween(firstDay, lastDay)
+
+  const selectedDaysSet = new Set(group.days.map((d) => ymd(d)))
+
+  const leadingBlanks = (allDaysInMonth[0].getDay() + 6) % 7
+  const trailingBlanks = (7 - ((leadingBlanks + allDaysInMonth.length) % 7)) % 7
   const calendarCells = [
     ...Array.from({ length: leadingBlanks }, () => null),
-    ...group.days,
+    ...allDaysInMonth,
     ...Array.from({ length: trailingBlanks }, () => null),
   ]
 
@@ -531,6 +542,7 @@ function MonthlyCalendarPage({ siteName, group, trades, getCount, dayColTotal, t
               tradeCodes={tradeCodes}
               getCount={getCount}
               dayColTotal={dayColTotal}
+              active={selectedDaysSet.has(ymd(day))}
             />
           ) : (
             <div key={`blank-${index}`} className="min-h-[82px] rounded-lg border border-dashed border-slate-200 bg-white/40" />
@@ -556,19 +568,24 @@ interface CalendarDayProps {
   tradeCodes: Record<string, string>
   getCount: (tradeId: string, d: Date) => number
   dayColTotal: (d: Date) => number
+  active: boolean
 }
 
-function CalendarDay({ day, trades, tradeCodes, getCount, dayColTotal }: CalendarDayProps) {
-  const entries = trades
-    .map((trade) => ({ trade, count: getCount(trade.id, day) }))
-    .filter((entry) => entry.count > 0)
+function CalendarDay({ day, trades, tradeCodes, getCount, dayColTotal, active }: CalendarDayProps) {
+  const entries = active
+    ? trades
+        .map((trade) => ({ trade, count: getCount(trade.id, day) }))
+        .filter((entry) => entry.count > 0)
+    : []
+
+  const total = active ? dayColTotal(day) : 0
 
   return (
-    <div className="min-h-[82px] rounded-lg border border-slate-200 bg-white p-1.5">
+    <div className={`min-h-[82px] rounded-lg border p-1.5 transition-colors ${active ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50/40'}`}>
       <div className="mb-1 flex items-start justify-between gap-1">
-        <span className="text-[0.72rem] font-extrabold text-ink">{day.getDate()}</span>
-        <span className="text-[0.72rem] font-extrabold text-blue-600">
-          {dayColTotal(day) > 0 ? formatManDay(dayColTotal(day)) : '-'}
+        <span className={`text-[0.72rem] font-extrabold ${active ? 'text-ink' : 'text-slate-300'}`}>{day.getDate()}</span>
+        <span className={`text-[0.72rem] font-extrabold ${active ? 'text-blue-600' : 'text-slate-300'}`}>
+          {total > 0 ? formatManDay(total) : '-'}
         </span>
       </div>
 
