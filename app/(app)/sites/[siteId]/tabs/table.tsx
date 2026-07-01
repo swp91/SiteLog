@@ -488,7 +488,6 @@ function ReportSummaryPage({
           </h2>
           <p className="mt-2 text-sm text-slate-500">기간 {period}</p>
         </div>
-        <p className="rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-500 shadow-sm">SiteLog</p>
       </div>
 
       <div className="mb-5 grid grid-cols-4 gap-3">
