@@ -633,9 +633,14 @@ function MonthlyCalendarPage({ siteName, group, trades, getCount, dayColTotal, t
           </p>
           <h2 className="mt-1 text-[1.45rem] font-extrabold leading-tight tracking-normal">
             {siteName} · {group.label}
-            {trades.length === 1 
-              ? ` (${trades[0].name}) - 총 ${formatManDay(totalForDays(group.days))}공수` 
-              : ` - 총 ${formatManDay(totalForDays(group.days))}공수`}
+            {trades.length === 1 ? (
+              <>
+                <span> ({trades[0].name})</span>
+                <span className="text-blue-600"> - 총 {formatManDay(totalForDays(group.days))}공수</span>
+              </>
+            ) : (
+              <span className="text-blue-600"> - 총 {formatManDay(totalForDays(group.days))}공수</span>
+            )}
           </h2>
         </div>
       </div>
