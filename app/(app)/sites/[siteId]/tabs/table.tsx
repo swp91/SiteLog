@@ -540,17 +540,16 @@ function ReportSummaryPage({
         <div>
           <p className="text-sm font-semibold text-blue-600">출근기록 보고서</p>
           <h2 className="mt-1 text-[1.55rem] font-extrabold leading-tight tracking-normal">
-            {siteName} 월간 출근 요약
+            {siteName} 월간 출근 요약 ({trades.map((t) => t.name).join(', ')})
           </h2>
           <p className="mt-2 text-sm text-slate-500">기간 {period}</p>
         </div>
       </div>
 
-      <div className="mb-5 grid grid-cols-4 gap-3">
+      <div className="mb-5 grid grid-cols-3 gap-3">
         <MetricCard label="총 공수" value={formatManDay(grandTotal)} unit="공수" strong />
         <MetricCard label="작업 기간" value={formatManDay(days.length)} unit="일" />
         <MetricCard label="참여 공종" value={formatManDay(trades.length)} unit="개" />
-        <MetricCard label="최대 투입일" value={formatManDay(maxDay.total)} unit={`공수 · ${fmtKShort(maxDay.day)}`} />
       </div>
 
       <div className="grid grid-cols-[0.9fr_1.1fr] gap-4">
