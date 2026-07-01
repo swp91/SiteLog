@@ -26,10 +26,10 @@ export function CalendarTab({ site, trades, records, date, onPickDate }: Props) 
 
   const selected = parseYmd(date)
 
-  // Build calendar grid (Mon-start)
+  // Build calendar grid (Sun-start)
   const monthStart = startOfMonth(viewMonth)
   const monthEnd = endOfMonth(viewMonth)
-  const startDow = (monthStart.getDay() + 6) % 7
+  const startDow = monthStart.getDay()
   const gridStart = addDays(monthStart, -startDow)
 
   const weeks: Date[][] = []
@@ -76,8 +76,8 @@ export function CalendarTab({ site, trades, records, date, onPickDate }: Props) 
 
         {/* Weekday headers */}
         <div className="grid grid-cols-7 mb-1">
-          {['월', '화', '수', '목', '금', '토', '일'].map((d, i) => (
-            <div key={d} className={cn('text-center text-[0.6875rem] font-semibold py-1', i === 6 ? 'text-red-400' : i === 5 ? 'text-blue-400' : 'text-slate-400')}>
+          {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
+            <div key={d} className={cn('text-center text-[0.6875rem] font-semibold py-1', i === 0 ? 'text-red-400' : i === 6 ? 'text-blue-400' : 'text-slate-400')}>
               {d}
             </div>
           ))}
@@ -93,7 +93,7 @@ export function CalendarTab({ site, trades, records, date, onPickDate }: Props) 
             const isToday = isSameDay(d, today)
             const ratio = total / maxTotal
             const bgOpacity = total > 0 ? 0.12 + ratio * 0.7 : 0
-            const dow = (d.getDay() + 6) % 7 // 0=Mon
+            const dow = d.getDay() // 0=Sun, 1=Mon, ..., 6=Sat
 
             return (
               <button
@@ -114,7 +114,7 @@ export function CalendarTab({ site, trades, records, date, onPickDate }: Props) 
               >
                 <span className={cn(
                   'text-[0.8125rem] font-bold',
-                  isSelected ? 'text-white' : dow === 6 ? 'text-red-500' : dow === 5 ? 'text-blue-500' : 'text-ink',
+                  isSelected ? 'text-white' : dow === 0 ? 'text-red-500' : dow === 6 ? 'text-blue-500' : 'text-ink',
                 )}>
                   {d.getDate()}
                 </span>

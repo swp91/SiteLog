@@ -29,7 +29,7 @@ export default function CalendarPage() {
 
   const monthStart = startOfMonth(viewMonth)
   const monthEnd = endOfMonth(viewMonth)
-  const startDow = (monthStart.getDay() + 6) % 7
+  const startDow = monthStart.getDay()
   const gridStart = addDays(monthStart, -startDow)
 
   const weeks: Date[][] = []
@@ -88,8 +88,8 @@ export default function CalendarPage() {
           </div>
 
           <div className="grid grid-cols-7 mb-1">
-            {['월', '화', '수', '목', '금', '토', '일'].map((d, i) => (
-              <div key={d} className={cn('text-center text-[0.6875rem] font-semibold py-1', i === 6 ? 'text-red-400' : i === 5 ? 'text-blue-400' : 'text-slate-400')}>
+            {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
+              <div key={d} className={cn('text-center text-[0.6875rem] font-semibold py-1', i === 0 ? 'text-red-400' : i === 6 ? 'text-blue-400' : 'text-slate-400')}>
                 {d}
               </div>
             ))}

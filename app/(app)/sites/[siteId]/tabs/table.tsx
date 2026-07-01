@@ -616,7 +616,7 @@ function MonthlyCalendarPage({ siteName, group, trades, getCount, dayColTotal, t
 
   const selectedDaysSet = new Set(group.days.map((d) => ymd(d)))
 
-  const leadingBlanks = (allDaysInMonth[0].getDay() + 6) % 7
+  const leadingBlanks = allDaysInMonth[0].getDay()
   const trailingBlanks = (7 - ((leadingBlanks + allDaysInMonth.length) % 7)) % 7
   const calendarCells = [
     ...Array.from({ length: leadingBlanks }, () => null),
@@ -639,7 +639,7 @@ function MonthlyCalendarPage({ siteName, group, trades, getCount, dayColTotal, t
       </div>
 
       <div className="grid grid-cols-7 gap-1.5 text-center text-[0.7rem] font-bold text-slate-500">
-        {['월', '화', '수', '목', '금', '토', '일'].map((label) => (
+        {['일', '월', '화', '수', '목', '금', '토'].map((label) => (
           <span key={label}>{label}</span>
         ))}
       </div>

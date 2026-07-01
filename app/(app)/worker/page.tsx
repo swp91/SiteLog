@@ -99,7 +99,7 @@ export default function WorkerPage() {
 
   const monthStart = startOfMonth(month)
   const monthEnd = endOfMonth(month)
-  const gridStart = addDays(monthStart, -((monthStart.getDay() + 6) % 7))
+  const gridStart = addDays(monthStart, -monthStart.getDay())
   const days: Date[] = []
   let cursor = new Date(gridStart)
   while (cursor <= monthEnd || days.length < 35) {
@@ -401,7 +401,7 @@ ${siteLines || '기록 없음'}
             {settlementMode === 'month' ? (
               <>
                 <div className="grid grid-cols-7 mb-1">
-                  {['월', '화', '수', '목', '금', '토', '일'].map((day) => (
+                  {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
                     <div key={day} className="text-center text-[0.6875rem] font-semibold py-1 text-slate-400">{day}</div>
                   ))}
                 </div>
