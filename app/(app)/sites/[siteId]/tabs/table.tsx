@@ -546,9 +546,8 @@ function ReportSummaryPage({
         </div>
       </div>
 
-      <div className="mb-5 grid grid-cols-3 gap-3">
+      <div className="mb-5 grid grid-cols-2 gap-3">
         <MetricCard label="총 공수" value={formatManDay(grandTotal)} unit="공수" strong />
-        <MetricCard label="작업 기간" value={formatManDay(days.length)} unit="일" />
         <MetricCard label="참여 공종" value={formatManDay(trades.length)} unit="개" />
       </div>
 
