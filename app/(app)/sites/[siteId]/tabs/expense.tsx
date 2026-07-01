@@ -711,7 +711,7 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
                 const parsedMonth = parseISO(`${month}-01`)
                 const monthItems = Object.values(days).flat()
                 return (
-                  <div key={month} className="mb-6 last:mb-0 break-inside-avoid">
+                  <div key={month} className="mb-6 last:mb-0">
                     <h3 className="text-sm font-bold text-black mb-2">
                       {format(parsedMonth, 'yyyy년 MM월')}
                     </h3>
@@ -727,7 +727,7 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
                       </thead>
                       <tbody>
                         {monthItems.map((item) => (
-                          <tr key={item.id}>
+                          <tr key={item.id} className="break-inside-avoid">
                             <td className="border border-gray-300 px-3 py-2 text-black">
                               {item.date}
                             </td>
