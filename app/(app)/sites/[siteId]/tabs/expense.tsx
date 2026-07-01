@@ -115,13 +115,13 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
   const userCategories = user.expenseCategories || []
   const currentCategories = userCategories.length > 0 ? userCategories : DEFAULT_CATEGORIES
 
-  // 선택된 기간의 경비 필터링
+  // 선택된 기간의 경비 필터링 (날짜 오름차순 정렬)
   const monthlyExpenses = useMemo(() => {
     return expenses
       .filter((e) => e.siteId === site.id && e.date >= fromDate && e.date <= toDate)
       .sort((a, b) => {
-        if (a.date !== b.date) return b.date.localeCompare(a.date)
-        return b.time.localeCompare(a.time)
+        if (a.date !== b.date) return a.date.localeCompare(b.date)
+        return a.time.localeCompare(b.time)
       })
   }, [expenses, site.id, fromDate, toDate])
 
@@ -136,23 +136,40 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
     
   const balance = totalIncome - totalExpense
 
-  // 카테고리별 지출 요약 계산 (인쇄용)
-  const categoryExpenses = monthlyExpenses
-    .filter((e) => e.type === 'expense')
-    .reduce((acc, e) => {
-      acc[e.category] = (acc[e.category] ?? 0) + e.amount
-      return acc
-    }, {} as Record<string, number>)
+  // 카테고리별 지출 요약 계산 (인쇄용, 금액 내림차순 정렬)
+  const categoryExpenses = useMemo(() => {
+    const summary = monthlyExpenses
+      .filter((e) => e.type === 'expense')
+      .reduce((acc, e) => {
+        acc[e.category] = (acc[e.category] ?? 0) + e.amount
+        return acc
+      }, {} as Record<string, number>)
+      
+    return Object.entries(summary).sort((a, b) => b[1] - a[1])
+  }, [monthlyExpenses])
 
-  // 일별 그룹화
-  const groupedExpenses = monthlyExpenses.reduce((groups, item) => {
-    const dateStr = item.date
-    if (!groups[dateStr]) {
-      groups[dateStr] = []
-    }
-    groups[dateStr].push(item)
-    return groups
-  }, {} as Record<string, ExpenseItem[]>)
+  // 월별 -> 일별 그룹화
+  const monthlyGroupedExpenses = useMemo(() => {
+    const months: { month: string; days: Record<string, ExpenseItem[]> }[] = []
+    
+    monthlyExpenses.forEach((item) => {
+      const monthStr = item.date.slice(0, 7) // YYYY-MM
+      const dateStr = item.date
+      
+      let monthGroup = months.find((m) => m.month === monthStr)
+      if (!monthGroup) {
+        monthGroup = { month: monthStr, days: {} }
+        months.push(monthGroup)
+      }
+      
+      if (!monthGroup.days[dateStr]) {
+        monthGroup.days[dateStr] = []
+      }
+      monthGroup.days[dateStr].push(item)
+    })
+    
+    return months
+  }, [monthlyExpenses])
 
   // 등록 폼 열기
   const handleOpenAdd = () => {
@@ -331,59 +348,69 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
           )}
         </div>
 
-        {/* 일별 목록 */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
-          {Object.keys(groupedExpenses).length === 0 ? (
+        {/* 월별/일별 목록 */}
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-6">
+          {monthlyGroupedExpenses.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-48 text-slate-400 dark:text-slate-600">
               <p className="text-sm">기록된 경비 내역이 없습니다</p>
             </div>
           ) : (
-            Object.entries(groupedExpenses).map(([dateStr, items]) => {
-              const parsedDate = parseISO(dateStr)
-              const dayIncome = items.filter(x => x.type === 'income').reduce((sum, x) => sum + x.amount, 0)
-              const dayExpense = items.filter(x => x.type === 'expense').reduce((sum, x) => sum + x.amount, 0)
-
+            monthlyGroupedExpenses.map(({ month, days }) => {
+              const parsedMonth = parseISO(`${month}-01`)
               return (
-                <div key={dateStr} className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200/60 dark:border-slate-800/80 shadow-sm overflow-hidden">
-                  {/* 날짜 헤더 */}
-                  <div className="bg-slate-50/60 dark:bg-slate-800/30 px-3 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
-                      {format(parsedDate, 'MM. dd. (eee)', { locale: ko })}
-                    </span>
-                    <div className="flex items-center gap-2 text-[0.6875rem] font-medium">
-                      {dayIncome > 0 && <span className="text-blue-600 dark:text-blue-400">+{wonFmt(dayIncome)}</span>}
-                      {dayExpense > 0 && <span className="text-rose-600 dark:text-rose-400">-{wonFmt(dayExpense)}</span>}
-                    </div>
-                  </div>
+                <div key={month} className="space-y-3">
+                  {/* 월 헤더 */}
+                  <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 px-1 uppercase tracking-wider">
+                    {format(parsedMonth, 'yyyy년 MM월')}
+                  </h3>
+                  <div className="space-y-4">
+                    {Object.entries(days).map(([dateStr, items]) => {
+                      const parsedDate = parseISO(dateStr)
+                      const dayIncome = items.filter(x => x.type === 'income').reduce((sum, x) => sum + x.amount, 0)
+                      const dayExpense = items.filter(x => x.type === 'expense').reduce((sum, x) => sum + x.amount, 0)
 
-                  {/* 세부 항목 목록 */}
-                  <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                    {items.map((item) => (
-                      <div
-                        key={item.id}
-                        onClick={() => handleOpenEdit(item)}
-                        className="flex items-center justify-between p-3.5 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 active:bg-slate-50 dark:active:bg-slate-800/40 cursor-pointer transition-colors"
-                      >
-                        <div className="flex items-start gap-3 min-w-0">
-                          <span className="text-[0.6875rem] text-slate-400 mt-0.5 shrink-0">
-                            {item.time}
-                          </span>
-                          <div className="min-w-0">
-                            <span className="inline-block px-1.5 py-0.5 text-[0.625rem] font-bold rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 mb-1">
-                              {item.category}
+                      return (
+                        <div key={dateStr} className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200/60 dark:border-slate-800/80 shadow-sm overflow-hidden">
+                          {/* 날짜 헤더 */}
+                          <div className="bg-slate-50/60 dark:bg-slate-800/30 px-3 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
+                              {format(parsedDate, 'MM. dd. (eee)', { locale: ko })}
                             </span>
-                            <p className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate leading-snug">
-                              {item.description || item.category}
-                            </p>
+                            <div className="flex items-center gap-2 text-[0.6875rem] font-medium">
+                              {dayIncome > 0 && <span className="text-blue-600 dark:text-blue-400">+{wonFmt(dayIncome)}</span>}
+                              {dayExpense > 0 && <span className="text-rose-600 dark:text-rose-400">-{wonFmt(dayExpense)}</span>}
+                            </div>
+                          </div>
+
+                          {/* 세부 항목 목록 */}
+                          <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                            {items.map((item) => (
+                              <div
+                                key={item.id}
+                                onClick={() => handleOpenEdit(item)}
+                                className="flex items-center justify-between p-3.5 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 active:bg-slate-50 dark:active:bg-slate-800/40 cursor-pointer transition-colors"
+                              >
+                                <div className="flex items-start gap-3 min-w-0">
+                                  <div className="min-w-0">
+                                    <span className="inline-block px-1.5 py-0.5 text-[0.625rem] font-bold rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 mb-1">
+                                      {item.category}
+                                    </span>
+                                    <p className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate leading-snug">
+                                      {item.description || item.category}
+                                    </p>
+                                  </div>
+                                </div>
+                                <span className={`text-xs font-bold shrink-0 pl-2 ${
+                                  item.type === 'income' ? 'text-blue-600 dark:text-blue-400' : 'text-rose-600 dark:text-rose-400'
+                                }`}>
+                                  {item.type === 'income' ? '+' : '-'}{wonFmt(item.amount)}원
+                                </span>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                        <span className={`text-xs font-bold shrink-0 pl-2 ${
-                          item.type === 'income' ? 'text-blue-600 dark:text-blue-400' : 'text-rose-600 dark:text-rose-400'
-                        }`}>
-                          {item.type === 'income' ? '+' : '-'}{wonFmt(item.amount)}원
-                        </span>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               )
@@ -652,7 +679,7 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
           </div>
 
           {/* 2. 카테고리별 지출 요약 */}
-          {Object.keys(categoryExpenses).length > 0 && (
+          {categoryExpenses.length > 0 && (
             <div className="mb-8">
               <h2 className="text-base font-bold border-b border-gray-300 pb-1 mb-3 text-black">2. 카테고리별 지출 현황</h2>
               <table className="w-4/12 border-collapse text-left text-xs">
@@ -663,7 +690,7 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.entries(categoryExpenses).map(([cat, amt]) => (
+                  {categoryExpenses.map(([cat, amt]) => (
                     <tr key={cat}>
                       <td className="border border-gray-300 px-3 py-2 text-black">{cat}</td>
                       <td className="border border-gray-300 px-3 py-2 text-rose-600 font-semibold">{wonFmt(amt)}원</td>
@@ -674,46 +701,55 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
             </div>
           )}
 
-          {/* 3. 일별 세부 내역 */}
+          {/* 3. 월별 경비 세부 내역 */}
           <div>
-            <h2 className="text-base font-bold border-b border-gray-300 pb-1 mb-3 text-black">3. 일별 경비 세부 내역</h2>
-            {monthlyExpenses.length === 0 ? (
+            <h2 className="text-base font-bold border-b border-gray-300 pb-1 mb-3 text-black">3. 월별 경비 세부 내역</h2>
+            {monthlyGroupedExpenses.length === 0 ? (
               <p className="text-xs text-gray-500">기록된 내역이 없습니다.</p>
             ) : (
-              <table className="w-full border-collapse text-left text-xs">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border border-gray-300 px-3 py-2 text-black font-bold">날짜</th>
-                    <th className="border border-gray-300 px-3 py-2 text-black font-bold">시간</th>
-                    <th className="border border-gray-300 px-3 py-2 text-black font-bold">구분</th>
-                    <th className="border border-gray-300 px-3 py-2 text-black font-bold">카테고리</th>
-                    <th className="border border-gray-300 px-3 py-2 text-black font-bold">항목명 / 메모</th>
-                    <th className="border border-gray-300 px-3 py-2 text-black font-bold">금액</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {monthlyExpenses.map((item) => (
-                    <tr key={item.id}>
-                      <td className="border border-gray-300 px-3 py-2 text-black">
-                        {item.date}
-                      </td>
-                      <td className="border border-gray-300 px-3 py-2 text-gray-600">{item.time}</td>
-                      <td className={`border border-gray-300 px-3 py-2 font-bold ${
-                        item.type === 'income' ? 'text-blue-600' : 'text-rose-600'
-                      }`}>
-                        {item.type === 'income' ? '수입' : '지출'}
-                      </td>
-                      <td className="border border-gray-300 px-3 py-2 text-black">{item.category}</td>
-                      <td className="border border-gray-300 px-3 py-2 text-black">{item.description || '-'}</td>
-                      <td className={`border border-gray-300 px-3 py-2 font-bold ${
-                        item.type === 'income' ? 'text-blue-600' : 'text-rose-600'
-                      }`}>
-                        {item.type === 'income' ? '+' : '-'}{wonFmt(item.amount)}원
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              monthlyGroupedExpenses.map(({ month, days }) => {
+                const parsedMonth = parseISO(`${month}-01`)
+                const monthItems = Object.values(days).flat()
+                return (
+                  <div key={month} className="mb-6 last:mb-0 break-inside-avoid">
+                    <h3 className="text-sm font-bold text-black mb-2">
+                      {format(parsedMonth, 'yyyy년 MM월')}
+                    </h3>
+                    <table className="w-full border-collapse text-left text-xs">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="border border-gray-300 px-3 py-2 text-black font-bold">날짜</th>
+                          <th className="border border-gray-300 px-3 py-2 text-black font-bold">구분</th>
+                          <th className="border border-gray-300 px-3 py-2 text-black font-bold">카테고리</th>
+                          <th className="border border-gray-300 px-3 py-2 text-black font-bold">항목명 / 메모</th>
+                          <th className="border border-gray-300 px-3 py-2 text-black font-bold">금액</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {monthItems.map((item) => (
+                          <tr key={item.id}>
+                            <td className="border border-gray-300 px-3 py-2 text-black">
+                              {item.date}
+                            </td>
+                            <td className={`border border-gray-300 px-3 py-2 font-bold ${
+                              item.type === 'income' ? 'text-blue-600' : 'text-rose-600'
+                            }`}>
+                              {item.type === 'income' ? '수입' : '지출'}
+                            </td>
+                            <td className="border border-gray-300 px-3 py-2 text-black">{item.category}</td>
+                            <td className="border border-gray-300 px-3 py-2 text-black">{item.description || '-'}</td>
+                            <td className={`border border-gray-300 px-3 py-2 font-bold ${
+                              item.type === 'income' ? 'text-blue-600' : 'text-rose-600'
+                            }`}>
+                              {item.type === 'income' ? '+' : '-'}{wonFmt(item.amount)}원
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )
+              })
             )}
           </div>
         </div>,
