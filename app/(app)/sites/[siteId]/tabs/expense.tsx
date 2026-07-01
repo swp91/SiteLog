@@ -726,36 +726,25 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
                         </tr>
                       </thead>
                       <tbody>
-                        {monthItems.map((item, idx) => {
-                          const isLastOfDate = idx === monthItems.length - 1 || monthItems[idx + 1].date !== item.date
-                          const borderStyle = isLastOfDate && idx !== monthItems.length - 1 
-                            ? { borderBottom: '2px solid #94a3b8' } 
-                            : undefined
-
-                          return (
-                            <tr key={item.id} className="break-inside-avoid">
-                              <td className="border border-gray-300 px-3 py-2 text-black" style={borderStyle}>
-                                {item.date}
-                              </td>
-                              <td className={`border border-gray-300 px-3 py-2 font-bold ${
-                                item.type === 'income' ? 'text-blue-600' : 'text-rose-600'
-                              }`} style={borderStyle}>
-                                {item.type === 'income' ? '수입' : '지출'}
-                              </td>
-                              <td className="border border-gray-300 px-3 py-2 text-black" style={borderStyle}>
-                                {item.category}
-                              </td>
-                              <td className="border border-gray-300 px-3 py-2 text-black" style={borderStyle}>
-                                {item.description || '-'}
-                              </td>
-                              <td className={`border border-gray-300 px-3 py-2 font-bold ${
-                                item.type === 'income' ? 'text-blue-600' : 'text-rose-600'
-                              }`} style={borderStyle}>
-                                {item.type === 'income' ? '+' : '-'}{wonFmt(item.amount)}원
-                              </td>
-                            </tr>
-                          )
-                        })}
+                        {monthItems.map((item) => (
+                          <tr key={item.id} className="break-inside-avoid">
+                            <td className="border border-gray-300 px-3 py-2 text-black">
+                              {item.date}
+                            </td>
+                            <td className={`border border-gray-300 px-3 py-2 font-bold ${
+                              item.type === 'income' ? 'text-blue-600' : 'text-rose-600'
+                            }`}>
+                              {item.type === 'income' ? '수입' : '지출'}
+                            </td>
+                            <td className="border border-gray-300 px-3 py-2 text-black">{item.category}</td>
+                            <td className="border border-gray-300 px-3 py-2 text-black">{item.description || '-'}</td>
+                            <td className={`border border-gray-300 px-3 py-2 font-bold ${
+                              item.type === 'income' ? 'text-blue-600' : 'text-rose-600'
+                            }`}>
+                              {item.type === 'income' ? '+' : '-'}{wonFmt(item.amount)}원
+                            </td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
                   </div>
