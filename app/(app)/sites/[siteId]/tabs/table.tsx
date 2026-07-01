@@ -52,7 +52,18 @@ function formatManDay(value: number) {
 export function TableTab({ site, trades, records }: Props) {
   const [periodMode, setPeriodMode] = useState<PeriodMode>('all')
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [deselectedTradeIds, setDeselectedTradeIds] = useState<Set<string>>(new Set())
   const flash = useAppStore((state) => state.flash)
+
+  const toggleTrade = (tradeId: string) => {
+    const next = new Set(deselectedTradeIds)
+    if (next.has(tradeId)) {
+      next.delete(tradeId)
+    } else {
+      next.add(tradeId)
+    }
+    setDeselectedTradeIds(next)
+  }
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -138,15 +149,19 @@ ${tradeLines || '내역 없음'}
   }
 
   function dayColTotal(d: Date): number {
-    return trades.reduce((sum, trade) => sum + getCount(trade.id, d), 0)
+    return trades
+      .filter((trade) => !deselectedTradeIds.has(trade.id))
+      .reduce((sum, trade) => sum + getCount(trade.id, d), 0)
   }
 
   function totalForDays(targetDays: Date[]): number {
-    return trades.reduce((sum, trade) => sum + tradeTotal(trade.id, targetDays), 0)
+    return trades
+      .filter((trade) => !deselectedTradeIds.has(trade.id))
+      .reduce((sum, trade) => sum + tradeTotal(trade.id, targetDays), 0)
   }
 
   function activeTradesForDays(targetDays: Date[]) {
-    return trades.filter((trade) => tradeTotal(trade.id, targetDays) > 0)
+    return trades.filter((trade) => !deselectedTradeIds.has(trade.id) && tradeTotal(trade.id, targetDays) > 0)
   }
 
   const activeTrades = activeTradesForDays(days)
@@ -223,6 +238,15 @@ ${tradeLines || '내역 없음'}
 
   return (
     <div className="max-w-[1100px] mx-auto px-4 pb-8 pt-4">
+      {/* 스타일 주입 (인쇄 시 A4 세로 방향 설정 및 여백 조정) */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          @page {
+            size: A4 portrait !important;
+            margin: 12mm !important;
+          }
+        }
+      `}} />
       <div className="mb-4 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
         <div className="flex flex-col gap-3 wide:flex-row wide:items-center wide:justify-between">
           <div>
@@ -252,6 +276,31 @@ ${tradeLines || '내역 없음'}
             <TextInput type="date" value={customTo} onChange={(event) => setCustomTo(event.target.value)} />
           </div>
         )}
+
+        {/* 공종 필터 선택 UI */}
+        <div className="mt-3 border-t border-slate-100 dark:border-slate-800 pt-3">
+          <p className="text-xs font-bold text-slate-500 mb-2">출력할 공종 선택</p>
+          <div className="flex flex-wrap gap-1.5">
+            {trades.map((trade) => {
+              const isSelected = !deselectedTradeIds.has(trade.id)
+              return (
+                <button
+                  key={trade.id}
+                  type="button"
+                  onClick={() => toggleTrade(trade.id)}
+                  className={`px-2.5 py-1 text-xs rounded-full border transition-colors flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-400 font-semibold'
+                      : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 hover:bg-slate-100/50'
+                  }`}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: trade.color }} />
+                  {trade.name}
+                </button>
+              )
+            })}
+          </div>
+        </div>
       </div>
  
       <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white scrollbar-thin">
@@ -436,19 +485,26 @@ function ReportPreview({
         totalForDays={totalForDays}
       />
 
-      <div className="space-y-4">
-        {monthGroups.map((group) => (
-          <MonthlyCalendarPage
-            key={group.key}
-            siteName={siteName}
-            group={group}
-            trades={activeTradesForDays(group.days)}
-            getCount={getCount}
-            dayColTotal={dayColTotal}
-            totalForDays={totalForDays}
-          />
-        ))}
-      </div>
+      {trades.map((trade) => (
+        <div key={trade.id} className="space-y-4">
+          {monthGroups.map((group) => {
+            const monthlyTotalOfTrade = tradeTotal(trade.id, group.days)
+            if (monthlyTotalOfTrade === 0) return null
+
+            return (
+              <MonthlyCalendarPage
+                key={`${trade.id}-${group.key}`}
+                siteName={siteName}
+                group={group}
+                trades={[trade]}
+                getCount={getCount}
+                dayColTotal={(d) => getCount(trade.id, d)}
+                totalForDays={(targetDays) => tradeTotal(trade.id, targetDays)}
+              />
+            )
+          })}
+        </div>
+      ))}
     </section>
   )
 }
@@ -572,9 +628,11 @@ function MonthlyCalendarPage({ siteName, group, trades, getCount, dayColTotal, t
     <article className="report-sheet rounded-xl bg-slate-50 p-6">
       <div className="mb-4 flex items-start justify-between gap-6">
         <div>
-          <p className="text-sm font-semibold text-blue-600">월별 상세 출근 현황</p>
+          <p className="text-sm font-semibold text-blue-600">
+            {trades.length === 1 ? `${trades[0].name} 출근 현황` : '월별 상세 출근 현황'}
+          </p>
           <h2 className="mt-1 text-[1.45rem] font-extrabold leading-tight tracking-normal">
-            {siteName} · {group.label}
+            {siteName} · {group.label}{trades.length === 1 ? ` (${trades[0].name})` : ''}
           </h2>
         </div>
         <p className="text-sm font-semibold text-blue-600">월 공수 {formatManDay(totalForDays(group.days))}공수</p>
