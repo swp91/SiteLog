@@ -632,10 +632,12 @@ function MonthlyCalendarPage({ siteName, group, trades, getCount, dayColTotal, t
             {trades.length === 1 ? `${trades[0].name} 출근 현황` : '월별 상세 출근 현황'}
           </p>
           <h2 className="mt-1 text-[1.45rem] font-extrabold leading-tight tracking-normal">
-            {siteName} · {group.label}{trades.length === 1 ? ` (${trades[0].name})` : ''}
+            {siteName} · {group.label}
+            {trades.length === 1 
+              ? ` (${trades[0].name}) - 총 ${formatManDay(totalForDays(group.days))}공수` 
+              : ` - 총 ${formatManDay(totalForDays(group.days))}공수`}
           </h2>
         </div>
-        <p className="text-sm font-semibold text-blue-600">월 공수 {formatManDay(totalForDays(group.days))}공수</p>
       </div>
 
       <div className="grid grid-cols-7 gap-1.5 text-center text-[0.7rem] font-bold text-slate-500">
