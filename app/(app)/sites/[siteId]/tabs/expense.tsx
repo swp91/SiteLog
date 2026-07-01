@@ -263,6 +263,10 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
             background: white;
             color: black;
           }
+          #print-area-root,
+          #print-area-root * {
+            visibility: visible !important;
+          }
         }
       `}} />
 
