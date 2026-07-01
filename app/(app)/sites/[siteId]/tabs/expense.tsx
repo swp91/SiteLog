@@ -702,7 +702,7 @@ export function ExpenseTab({ site }: ExpenseTabProps) {
           )}
 
           {/* 3. 월별 경비 세부 내역 */}
-          <div>
+          <div style={{ breakBefore: 'page', pageBreakBefore: 'always' }}>
             <h2 className="text-base font-bold border-b border-gray-300 pb-1 mb-3 text-black">3. 월별 경비 세부 내역</h2>
             {monthlyGroupedExpenses.length === 0 ? (
               <p className="text-xs text-gray-500">기록된 내역이 없습니다.</p>
