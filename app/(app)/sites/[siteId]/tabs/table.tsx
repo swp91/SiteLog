@@ -696,24 +696,40 @@ function CalendarDay({ day, trades, tradeCodes, getCount, dayColTotal, active }:
     <div className={`min-h-[82px] rounded-lg border p-1.5 transition-colors ${active ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50/40'}`}>
       <div className="mb-1 flex items-start justify-between gap-1">
         <span className={`text-[0.72rem] font-extrabold ${active ? 'text-ink' : 'text-slate-300'}`}>{day.getDate()}</span>
-        <span className={`text-[0.72rem] font-extrabold ${active ? 'text-blue-600' : 'text-slate-300'}`}>
-          {total > 0 ? formatManDay(total) : '-'}
-        </span>
+        {trades.length > 1 && (
+          <span className={`text-[0.72rem] font-extrabold ${active ? 'text-blue-600' : 'text-slate-300'}`}>
+            {total > 0 ? formatManDay(total) : '-'}
+          </span>
+        )}
       </div>
 
-      <div className="grid grid-cols-2 gap-1">
-        {entries.map(({ trade, count }) => (
-          <span
+      {trades.length === 1 ? (
+        entries.map(({ trade, count }) => (
+          <div
             key={trade.id}
-            className="flex min-w-0 items-center justify-between rounded px-1 py-0.5 text-[0.58rem] font-extrabold leading-none text-white"
+            className="mt-1 flex flex-col items-center justify-center rounded-md py-1.5 px-1 text-white shadow-sm"
             style={{ backgroundColor: trade.color }}
             title={`${trade.name} ${formatManDay(count)}공수`}
           >
-            <span className="truncate">{tradeCodes[trade.id]}</span>
-            <span>{formatManDay(count)}</span>
-          </span>
-        ))}
-      </div>
+            <span className="text-[0.625rem] font-extrabold leading-none opacity-90 truncate max-w-full">{trade.name}</span>
+            <span className="mt-1 text-[1.125rem] font-black leading-none tabular-nums">{formatManDay(count)}</span>
+          </div>
+        ))
+      ) : (
+        <div className="grid grid-cols-2 gap-1">
+          {entries.map(({ trade, count }) => (
+            <span
+              key={trade.id}
+              className="flex min-w-0 items-center justify-between rounded px-1 py-0.5 text-[0.58rem] font-extrabold leading-none text-white"
+              style={{ backgroundColor: trade.color }}
+              title={`${trade.name} ${formatManDay(count)}공수`}
+            >
+              <span className="truncate">{tradeCodes[trade.id]}</span>
+              <span>{formatManDay(count)}</span>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
